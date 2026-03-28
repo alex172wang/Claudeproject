@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip list:*)",
+      "Bash(findstr /i 'tongda tdx 通达信')",
+      "WebSearch",
+      "Bash(python -c \"import mootdx; print\\(''mootdx 版本:'', mootdx.__version__\\)\")",
+      "Bash(python -c \"import tdxpy; print\\(''tdxpy 版本:'', tdxpy.__version__\\)\")",
+      "Bash(python -c \"import mootdx; help\\(mootdx\\)\")",
+      "Bash(python -c \"import tdxpy; help\\(tdxpy\\)\")",
+      "Bash(python -c \"import mootdx.quotes; print\\(''''=== mootdx.quotes 模块 ===''''\\); help\\(mootdx.quotes\\)\")",
+      "Bash(python -c \"import mootdx.reader; print\\(''''=== mootdx.reader 模块 ===''''\\); help\\(mootdx.reader\\)\")",
+      "Bash(python -c \"import mootdx.financial; print\\(''''=== mootdx.financial 模块 ===''''\\); help\\(mootdx.financial\\)\")",
+      "Bash(python -c \"import tdxpy.hq; print\\(''''=== tdxpy.hq 模块 ===''''\\); help\\(tdxpy.hq\\)\")",
+      "Bash(python -c \"import tdxpy.exhq; print\\(''''=== tdxpy.exhq 模块 ===''''\\); help\\(tdxpy.exhq\\)\")"
+    ]
+  }
+}
