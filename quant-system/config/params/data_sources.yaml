@@ -1,0 +1,209 @@
+# 数据源配置
+# 包含mootdx、AKShare、FRED等数据源的连接参数
+
+# ==================== mootdx 通达信数据源 ====================
+mootdx:
+  name: "mootdx"
+  description: "通达信行情数据接口，用于A股/港股/期货实时和历史行情"
+
+  # 连接参数
+  connection:
+    multithread: true    # 是否使用多线程
+    bestip: true         # 自动选择最优服务器
+    timeout: 30          # 超时时间（秒）
+
+  # 数据获取限制
+  limits:
+    max_records_per_request: 800  # 单次请求最多800条，超出需分页
+
+  # 市场代码映射
+  markets:
+    SH: 1    # 上海市场
+    SZ: 0    # 深圳市场
+
+  # ETF代码前缀规则（用于识别ETF）
+  etf_prefixes:
+    SH: ['51', '56', '58', '50']  # 上海ETF前缀
+    SZ: ['15', '16']              # 深圳ETF前缀
+
+  # 数据类型
+  data_types:
+    - "kline_daily"      # 日K线
+    - "kline_weekly"     # 周K线
+    - "kline_monthly"    # 月K线
+    - "kline_minute"     # 分钟K线
+    - "realtime_quote"   # 实时行情
+    - "stock_list"       # 股票列表
+    - "etf_list"         # ETF列表
+
+# ==================== AKShare 数据源 ====================
+akshare:
+  name: "AKShare"
+  description: "财经数据接口库，用于ETF列表、期权数据、宏观数据等"
+
+  # 连接参数
+  connection:
+    rate_limit: 0.5     # 调用间隔（秒），避免调用过快被封
+    timeout: 30
+
+  # 数据类型
+  data_types:
+    # ETF相关
+    - "etf_list"           # ETF基金列表
+    - "etf_spot"           # ETF实时行情
+    - "etf_hist"           # ETF历史行情
+
+    # 期权相关
+    - "option_50etf"       # 50ETF期权
+    - "option_300etf"      # 300ETF期权
+    - "option_iv"          # 期权隐含波动率
+    - "option_skew"        # 期权偏度
+    - "option_pcr"         # 认沽认购比
+
+    # 宏观数据
+    - "macro_pmi"          # PMI数据
+    - "macro_cpi"          # CPI数据
+    - "macro_gdp"          # GDP数据
+
+    # 市场日历
+    - "trade_calendar"     # 交易日历
+
+  # 期权配置
+  option:
+    underlying:
+      - "510050"  # 50ETF
+      - "510300"  # 300ETF
+    default_maturity: "near_month"  # 默认近月合约
+    delta_buckets: [25, 50]  # 常用Delta档位
+
+# ==================== FRED 宏观数据源 ====================
+fred:
+  name: "FRED"
+  description: "美联储经济数据，用于宏观指标和跨市场共振分析"
+
+  # 连接参数
+  connection:
+    api_key: ""  # FRED API Key（留空，从环境变量读取）
+    timeout: 30
+
+  # 数据系列配置
+  series:
+    # 利率相关
+    GS10:
+      name: "美国10年期国债收益率"
+      description: "10-Year Treasury Constant Maturity Rate"
+      frequency: "daily"
+      use_for: ["L1-05", "L3-05"]
+
+    GS2:
+      name: "美国2年期国债收益率"
+      description: "2-Year Treasury Constant Maturity Rate"
+      frequency: "daily"
+      use_for: ["yield_curve"]
+
+    # 汇率相关
+    DTWEXBGS:
+      name: "美元指数"
+      description: "Trade Weighted U.S. Dollar Index"
+      frequency: "daily"
+      use_for: ["L1-05"]
+
+    # 信用利差
+    BAA:
+      name: "Baa级公司债收益率"
+      description: "Moody's Seasoned Baa Corporate Bond Yield"
+      frequency: "monthly"
+      use_for: ["L4-07"]
+
+    AAA:
+      name: "Aaa级公司债收益率"
+      description: "Moody's Seasoned Aaa Corporate Bond Yield"
+      frequency: "monthly"
+      use_for: ["L4-07"]
+
+    # 美联储资产负债表
+    WALCL:
+      name: "美联储总资产"
+      description: "Federal Reserve Total Assets"
+      frequency: "weekly"
+      use_for: ["L4-07"]
+
+    # 通胀数据
+    CPIAUCSL:
+      name: "CPI"
+      description: "Consumer Price Index for All Urban Consumers"
+      frequency: "monthly"
+      use_for: ["L3-05"]
+
+    # 波动率指数
+    VIXCLS:
+      name: "VIX"
+      description: "CBOE Volatility Index"
+      frequency: "daily"
+      use_for: ["risk_indicator"]
+
+  # 数据更新频率
+  update_schedule:
+    daily: ["GS10", "GS2", "DTWEXBGS", "VIXCLS"]
+    weekly: ["WALCL"]
+    monthly: ["BAA", "AAA", "CPIAUCSL"]
+
+  # 缓存设置
+  cache:
+    enabled: true
+    ttl_days: 1  # 日线数据缓存1天
+    ttl_weeks: 7  # 周线数据缓存7天
+    ttl_months: 30  # 月线数据缓存30天
+
+# ==================== 数据缓存配置 ====================
+cache:
+  # 本地缓存设置
+  local:
+    enabled: true
+    directory: "data/cache"  # 缓存目录
+    max_size_mb: 1024  # 最大缓存大小（MB）
+
+  # SQLite缓存（用于行情数据）
+  sqlite:
+    enabled: true
+    db_path: "data/cache/market_data.db"
+    tables:
+      - "kline_daily"
+      - "kline_weekly"
+      - "kline_monthly"
+      - "realtime_quote"
+      - "fred_series"
+
+  # 缓存过期策略
+  expiration:
+    kline_daily: 1      # 日K线缓存1天
+    kline_weekly: 7     # 周K线缓存7天
+    kline_monthly: 30   # 月K线缓存30天
+    realtime: 0.003472  # 实时行情缓存5分钟（5/1440天）
+    etf_list: 7         # ETF列表缓存7天
+    fred_daily: 1       # FRED日线缓存1天
+    fred_weekly: 7      # FRED周线缓存7天
+    fred_monthly: 30    # FRED月线缓存30天
+
+# ==================== 全局数据约定 ====================
+data_conventions:
+  # 复权方式
+  adjustment:
+    backtest: "hfq"     # 回测使用后复权（历史稳定，收益率准确）
+    live: "qfq"         # 实盘使用前复权（最新价=真实盘面价格）
+    L4_gap: "none"      # L4缺口层使用不复权（跳空/流动性分析）
+
+  # 价格字段映射
+  price_fields:
+    open: "open"
+    high: "high"
+    low: "low"
+    close: "close"
+    volume: "volume"
+    amount: "amount"
+
+  # 时间格式
+  time_format:
+    date: "%Y-%m-%d"
+    datetime: "%Y-%m-%d %H:%M:%S"
+    timestamp: "timestamp"

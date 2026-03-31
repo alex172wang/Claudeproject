@@ -1,0 +1,119 @@
+# 多维度指标权重配置
+# 针对不同策略的权重配置
+
+# ETF轮动策略权重
+# 特点：趋势驱动，动量排序
+etf_rotation:
+  description: "ETF轮动策略 - 侧重趋势和轮动效率"
+  dimensions:
+    L1_trend: 0.40      # 趋势层：核心驱动
+    L2_structure: 0.20  # 结构层：信号过滤
+    L3_resonance: 0.20  # 共振层：轮动依据
+    L4_gap: 0.20        # 缺口层：风控叠加
+  # 子指标权重
+  l1_weights:
+    composite_momentum: 0.60
+    price_channel: 0.20
+    trend_acceleration: 0.20
+  l2_weights:
+    hurst: 0.30
+    vol_structure: 0.25
+    volume_divergence: 0.20
+    entity_ratio: 0.15
+    vol_autocorr: 0.10
+  l3_weights:
+    correlation_dispersion: 0.30
+    cross_market_consistency: 0.30
+    pc1_explained: 0.20
+    rotation_speed: 0.20
+  l4_weights:
+    iv_spread: 0.25
+    skewness: 0.25
+    kurtosis: 0.20
+    liquidity_gap: 0.15
+    gap_frequency: 0.15
+
+# 永久组合策略权重
+# 特点：资产配置，风险分散
+permanent_portfolio:
+  description: "永久组合策略 - 侧重共振和风险控制"
+  dimensions:
+    L1_trend: 0.15      # 趋势层：辅助参考
+    L2_structure: 0.20  # 结构层：再平衡触发
+    L3_resonance: 0.35  # 共振层：配比调整（核心）
+    L4_gap: 0.30        # 缺口层：防御触发
+  # 子指标权重
+  l1_weights:
+    price_channel: 0.70   # 主要看价格区间位置
+    composite_momentum: 0.20
+    ema_filter: 0.10
+  l2_weights:
+    drawdown_fractal: 0.40  # 回撤异常检测
+    hurst: 0.30
+    vol_structure: 0.30
+  l3_weights:
+    correlation_matrix: 0.40
+    macro_asset_resonance: 0.35
+    pc1_explained: 0.25
+  l4_weights:
+    fred_pressure: 0.50     # 宏观压力指标
+    iv_spread: 0.25
+    liquidity_gap: 0.25
+
+# 主题仓位策略权重
+# 特点：事件驱动，择时进出
+thematic_position:
+  description: "主题仓位策略 - 侧重趋势和结构品质"
+  dimensions:
+    L1_trend: 0.35      # 趋势层：入场依据
+    L2_structure: 0.25  # 结构层：品质确认
+    L3_resonance: 0.15  # 共振层：主题验证
+    L4_gap: 0.25        # 缺口层：止损/对冲
+  # 子指标权重
+  l1_weights:
+    composite_momentum: 0.50
+    ema_filter: 0.30
+    trend_acceleration: 0.20
+  l2_weights:
+    volume_divergence: 0.35   # 量价确认
+    entity_ratio: 0.35        # 趋势纯净度
+    hurst: 0.30
+  l3_weights:
+    cross_market_consistency: 0.70  # 跨市场验证
+    correlation_dispersion: 0.30
+  l4_weights:
+    skewness: 0.40            # 期权偏度是生死线
+    iv_spread: 0.30
+    gap_frequency: 0.30
+
+# 动态权重调整规则
+# 根据市场环境动态调整维度权重
+dynamic_adjustment:
+  enabled: true
+  conditions:
+    # 高波动市场：增加L2和L4权重
+    high_volatility:
+      trigger: "vix > 25 or atr_percent > 2.5"
+      adjustment:
+        L1: -0.10
+        L2: +0.05
+        L3: 0.00
+        L4: +0.05
+
+    # 趋势市场：增加L1权重
+    trending_market:
+      trigger: "adx > 25 and trend_strength > 0.6"
+      adjustment:
+        L1: +0.10
+        L2: 0.00
+        L3: -0.05
+        L4: -0.05
+
+    # 震荡市场：增加L3权重
+    ranging_market:
+      trigger: "adx < 20 and correlation_avg > 0.5"
+      adjustment:
+        L1: -0.05
+        L2: 0.00
+        L3: +0.10
+        L4: -0.05

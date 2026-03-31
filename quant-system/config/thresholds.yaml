@@ -1,0 +1,197 @@
+# 阈值配置文件
+# 各指标的计算阈值和触发条件
+
+# L1 趋势层阈值
+L1_trend:
+  # 复合斜率动量 (L1-01)
+  composite_slope_momentum:
+    ranking_percentile: 0.80  # 前20%进入候选
+    min_slope: 0.0005        # 最小日斜率 (约年化12.5%)
+
+  # EMA趋势过滤 (L1-02)
+  ema_trend_filter:
+    period: 120              # EMA周期
+    confirmation_days: 3     # 确认突破的天数
+
+  # 趋势加速度 (L1-03)
+  trend_acceleration:
+    window: 5                # 差分窗口
+    min_acceleration: 0.0001 # 最小加速度阈值
+
+  # 价格通道位置 (L1-04)
+  price_channel:
+    period: 60               # 通道周期
+    oversold: 0.20           # 超卖阈值
+    overbought: 0.80         # 超买阈值
+
+# L2 结构层阈值
+L2_structure:
+  # Hurst指数 (L2-01)
+  hurst_exponent:
+    window: 60
+    trend_threshold: 0.55    # 趋势持续阈值
+    mean_reversion: 0.45     # 均值回归阈值
+    filter_penalty: 0.5      # 低于阈值时的分数惩罚
+
+  # 波动率结构比 (L2-02)
+  volatility_structure:
+    short_window: 5
+    long_window: 30
+    stable_threshold: 1.0    # 稳定结构阈值
+    unstable_threshold: 1.2  # 不稳定结构阈值
+
+  # 成交量形态分歧 (L2-03)
+  volume_divergence:
+    ma_period: 20
+    confirmation_threshold: 1.05  # 量能确认阈值
+    divergence_threshold: 0.95  # 背离阈值
+
+  # 回撤分形维度 (L2-04)
+  drawdown_fractal:
+    window: 120
+    anomaly_threshold: 2.0   # 异常触发阈值（标准差倍数）
+
+  # K线实体比 (L2-05)
+  entity_ratio:
+    period: 20
+    clean_trend: 0.60      # 纯净趋势阈值
+    indecision: 0.30       # 犹豫不决阈值
+
+  # 波动率自相关 (L2-06)
+  volatility_autocorr:
+    lag: 1
+    window: 30
+    clustering_threshold: 0.3  # 聚集效应阈值
+
+# L3 共振层阈值
+L3_resonance:
+  # 滚动相关性矩阵 (L3-01)
+  correlation_matrix:
+    window: 60
+    high_correlation: 0.7      # 高相关阈值
+    low_correlation: 0.3       # 低相关阈值
+
+  # 相关性变速 (L3-02)
+  correlation_velocity:
+    diff_window: 5
+    convergence_threshold: 0.05   # 收敛速度阈值
+    divergence_threshold: -0.05 # 瓦解速度阈值
+
+  # PCA第一主成分解释率 (L3-03)
+  pca_explained:
+    window: 60
+    high_systematic: 0.70     # 高系统性风险（轮动暂停）
+    normal_range: [0.40, 0.70]  # 正常区间
+    low_systematic: 0.40     # 低系统性（可集中持仓）
+
+  # 跨市场动量一致性 (L3-04)
+  cross_market_consistency:
+    momentum_window: 30
+    high_consistency: 0.75    # 高度一致（3/4市场同向）
+    low_consistency: 0.50    # 低一致性
+
+  # 宏观-资产共振度 (L3-05)
+  macro_resonance:
+    window: 90
+    high_resonance: 0.6      # 高宏观共振
+    regime_change: 0.3        # 制度转换阈值
+
+  # 板块轮动速度 (L3-06)
+  rotation_speed:
+    window: 4  # 周
+    fast_rotation: 2.0        # 快速轮动（排名标准差）
+    slow_rotation: 0.5        # 慢速轮动
+
+# L4 缺口层阈值
+L4_gap:
+  # 隐含-实现波动率价差 (L4-01)
+  iv_realized_spread:
+    realized_window: 30
+    calm: 0.03               # 平静: <3%
+    concern: 0.08            # 隐忧: 3-8%
+    panic_building: 0.08     # 恐慌酝酿: >8%
+
+  # 期权偏度 (L4-02)
+  option_skewness:
+    strike_delta: 0.25
+    calm: 0.05               # 平静: <5%
+    concern: 0.10             # 隐忧: 5-10%
+    panic_building: 0.10      # 恐慌酝酿: >10%
+
+  # 认沽认购比 (L4-03)
+  put_call_ratio:
+    ma_period: 10
+    extreme_fear: 1.2         # 极度恐惧
+    fear: 1.0                 # 恐惧
+    neutral: [0.7, 1.0]      # 中性
+    greed: 0.7               # 贪婪
+    extreme_greed: 0.5       # 极度贪婪
+
+  # 流动性缺口 (L4-04)
+  liquidity_gap:
+    spread_ma: 20
+    normal: 0.001            # 正常: 0.1%
+    caution: 0.002            # 警戒: 0.2%
+    warning: 0.005            # 警告: 0.5%
+
+  # 尾部风险度量 (L4-05)
+  tail_risk:
+    window: 60
+    normal: 3.0                # 正态: 峰度≈3
+    fat_tail: 4.0             # 肥尾: 峰度>4
+    extreme: 6.0              # 极值: 峰度>6
+
+  # 跳空缺口频率 (L4-06)
+  gap_frequency:
+    window: 30
+    gap_threshold: 0.01       # 1%跳空幅度
+    rare: 0.03               # 稀少: <3%
+    normal: 0.10              # 正常: 3-10%
+    frequent: 0.10              # 频繁: >10%
+
+  # FRED压力合成 (L4-07)
+  fred_pressure:
+    balance_sheet_window: 12  # 月度
+    credit_spread_window: 4   # 周度
+    normal: 0.0               # 正常压力
+    elevated: 1.0              # 压力上升
+    high: 2.0                  # 高压力
+    critical: 3.0              # 临界压力
+
+# 风险状态矩阵定义
+risk_states:
+  calm:
+    name: "平静"
+    color: "green"
+    description: "市场定价合理，正常执行策略"
+    conditions:
+      L4_iv_spread: "< 3%"
+      L4_skewness: "< 5%"
+      L4_kurtosis: "< 4"
+
+  concern:
+    name: "隐忧"
+    color: "yellow"
+    description: "有人在买保险，收紧止损，减少杠杆"
+    conditions:
+      L4_iv_spread: "3-8%"
+      L4_skewness: "5-10%"
+      L4_kurtosis: "4-6"
+
+  panic_building:
+    name: "恐慌酝酿"
+    color: "orange"
+    description: "尾部风险定价激增，降仓，启动对冲"
+    conditions:
+      L4_iv_spread: "> 8%"
+      L4_skewness: "> 10%"
+      L4_kurtosis: "> 6"
+
+  panic_released:
+    name: "恐慌释放"
+    color: "blue"
+    description: "风险已释放，逆向布局窗口"
+    conditions:
+      L4_iv_spread: "高位回落"
+      L4_skewness: "高位回落"
+      L4_kurtosis: "开始下降"

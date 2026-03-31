@@ -1,0 +1,167 @@
+# 实盘监控调度配置
+# 对应文档: docs/PRD.md 第六节
+
+# ==================== 调度器配置 ====================
+scheduler:
+  # 调度器类型: celery 或 apscheduler
+  backend: "apscheduler"  # 单机使用APScheduler，分布式使用Celery
+
+  # 时区设置
+  timezone: "Asia/Shanghai"
+
+  # 任务执行超时（秒）
+  job_timeout: 300
+
+  # 最大并发任务数
+  max_workers: 4
+
+  # 任务失败重试
+  retry:
+    enabled: true
+    max_attempts: 3
+    delay_seconds: 60
+
+# ==================== 监控策略执行频率 ====================
+frequencies:
+  # 盘中10分钟一次（日度轮换）
+  intraday_10min:
+    name: "盘中10分钟"
+    description: "交易日9:30-15:00，每10分钟执行"
+    cron: "*/10 9-14 * * 1-5"  # 工作日每10分钟
+    timezone: "Asia/Shanghai"
+    market_hours:
+      start: "09:30"
+      end: "15:00"
+
+  # 每日14:45一次（周度轮换）
+  daily_1445:
+    name: "每日14:45"
+    description: "每日14:45执行一次"
+    cron: "45 14 * * 1-5"  # 工作日14:45
+    timezone: "Asia/Shanghai"
+
+  # 每周执行一次
+  weekly:
+    name: "每周"
+    description: "每周五14:45执行"
+    cron: "45 14 * * 5"  # 每周五14:45
+    timezone: "Asia/Shanghai"
+
+  # 每月执行一次
+  monthly:
+    name: "每月"
+    description: "每月最后一个交易日14:45执行"
+    cron: "45 14 L * *"  # 每月最后一天14:45
+    timezone: "Asia/Shanghai"
+
+# ==================== 交易日历配置 ====================
+trading_calendar:
+  # 交易日历数据源
+  source: "akshare"
+
+  # 缓存设置
+  cache:
+    enabled: true
+    ttl_days: 30  # 每月初更新
+
+  # 市场设置
+  markets:
+    - "SSE"    # 上海证券交易所
+    - "SZSE"   # 深圳证券交易所
+
+  # 交易时间
+  trading_hours:
+    pre_market:
+      start: "09:15"
+      end: "09:25"
+    morning:
+      start: "09:30"
+      end: "11:30"
+    afternoon:
+      start: "13:00"
+      end: "15:00"
+
+# ==================== 信号计算配置 ====================
+signal_calculation:
+  # 价格数据类型
+  price_type: "qfq"  # 实盘使用的前复权价格
+
+  # 数据获取超时
+  data_fetch_timeout: 60
+
+  # 指标计算超时
+  indicator_timeout: 120
+
+  # 最大重试次数
+  max_retries: 3
+
+  # 信号去重
+  deduplication:
+    enabled: true
+    window_minutes: 60  # 60分钟内相同信号去重
+
+  # 信号存储
+  storage:
+    enabled: true
+    retention_days: 365  # 保留365天
+
+# ==================== 飞书Webhook配置（预留） ====================
+feishu:
+  enabled: false  # 默认关闭，需要时开启
+
+  # Webhook URL（从环境变量读取）
+  webhook_url: ""  # 留空，从环境变量 FEISHU_WEBHOOK_URL 读取
+
+  # 消息模板
+  templates:
+    signal:
+      title: "📊 ETF轮动信号"
+      fields:
+        - "时间"
+        - "策略"
+        - "操作"
+        - "综合得分"
+        - "各层得分"
+        - "当前价"
+
+    risk_alert:
+      title: "⚠️ 风险预警"
+      fields:
+        - "时间"
+        - "预警类型"
+        - "触发指标"
+        - "建议操作"
+
+  # 通知频率限制
+  rate_limit:
+    enabled: true
+    max_per_hour: 10  # 每小时最多10条
+
+# ==================== 监控任务配置 ====================
+monitor_tasks:
+  # 默认监控策略模板
+  default_strategies:
+    - name: "ETF周度轮动"
+      pool: "rotation_pool"
+      strategy_type: "rotation"
+      frequency: "weekly"
+      is_active: false  # 默认不启用，需手动开启
+
+    - name: "永久组合月度再平衡"
+      pool: "permanent_pool"
+      strategy_type: "permanent"
+      frequency: "monthly"
+      is_active: false
+
+    - name: "主题仓位日度监控"
+      pool: "thematic_pool"
+      strategy_type: "thematic"
+      frequency: "daily_1445"
+      is_active: false
+
+  # 健康检查
+  health_check:
+    enabled: true
+    interval_minutes: 5
+    alert_on_failure: true
+    max_failures_before_alert: 3

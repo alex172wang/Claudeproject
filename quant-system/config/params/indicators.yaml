@@ -1,0 +1,201 @@
+# 多维量化指标体系 - 默认参数配置
+# 对应文档: docs/多维量化指标体系_v1.0.md
+
+# ==================== L1 趋势层 ====================
+L1:
+  # L1-01: 复合斜率动量
+  L1-01:
+    name: "复合斜率动量"
+    description: "30日斜率×R²(0.6) + 15日斜率×R²(0.4)"
+    long_window: 30
+    short_window: 15
+    long_weight: 0.6
+    short_weight: 0.4
+    data_source: "mootdx"
+
+  # L1-02: EMA趋势过滤
+  L1-02:
+    name: "EMA趋势过滤"
+    description: "收盘价 > EMA(N) 为多头环境"
+    period: 120
+    data_source: "mootdx"
+
+  # L1-03: 趋势加速度
+  L1-03:
+    name: "趋势加速度"
+    description: "复合斜率动量的一阶差分（动量的动量）"
+    diff_window: 5
+    data_source: "derived"  # 派生自L1-01
+
+  # L1-04: 价格通道位置
+  L1-04:
+    name: "价格通道位置"
+    description: "(Close - N日最低) / (N日最高 - N日最低)"
+    period: 60
+    data_source: "mootdx"
+
+  # L1-05: FRED趋势共振
+  L1-05:
+    name: "FRED趋势共振"
+    description: "美10Y国债收益率斜率 + 美元指数DXY斜率"
+    yield_slope_window: 30
+    dxy_slope_window: 30
+    data_source: "FRED"
+    series:
+      - "GS10"    # 美国10年期国债收益率
+      - "DTWEXBGS"  # 美元指数
+
+# ==================== L2 结构层 ====================
+L2:
+  # L2-01: Hurst指数
+  L2-01:
+    name: "Hurst指数"
+    description: "R/S分析法，衡量趋势持续性品质"
+    window: 60
+    data_source: "mootdx"
+
+  # L2-02: 波动率结构比
+  L2-02:
+    name: "波动率结构比"
+    description: "短期实现波动率 / 长期实现波动率"
+    short_window: 5
+    long_window: 30
+    data_source: "mootdx"
+
+  # L2-03: 成交量形态分歧
+  L2-03:
+    name: "成交量形态分歧"
+    description: "价格新高时成交量相对MA(20)的偏离度"
+    volume_ma_period: 20
+    data_source: "mootdx"
+
+  # L2-04: 回撤分形维度
+  L2-04:
+    name: "回撤分形维度"
+    description: "最大回撤序列的Hurst指数（回撤是否有自相似性）"
+    rolling_window: 120
+    data_source: "derived"
+
+  # L2-05: K线实体比
+  L2-05:
+    name: "K线实体比"
+    description: "N日内实体占比均值（实体/振幅），衡量趋势纯净度"
+    period: 20
+    data_source: "mootdx"
+
+  # L2-06: 波动率自相关
+  L2-06:
+    name: "波动率自相关"
+    description: "日收益率绝对值的ACF(1)，衡量波动率聚集程度"
+    lag: 1
+    window: 30
+    data_source: "mootdx"
+
+# ==================== L3 共振层 ====================
+L3:
+  # L3-01: 滚动相关性矩阵
+  L3-01:
+    name: "滚动相关性矩阵"
+    description: "候选池内所有资产两两滚动Pearson相关系数"
+    window: 60
+    data_source: "AKShare"
+
+  # L3-02: 相关性变速
+  L3-02:
+    name: "相关性变速"
+    description: "L3-01的一阶差分，捕捉相关性瓦解/收敛速度"
+    diff_window: 5
+    data_source: "derived"
+
+  # L3-03: PCA第一主成分解释率
+  L3-03:
+    name: "PCA第一主成分解释率"
+    description: "候选池收益率矩阵PCA，PC1方差解释比"
+    window: 60
+    data_source: "derived"
+
+  # L3-04: 跨市场动量一致性
+  L3-04:
+    name: "跨市场动量一致性"
+    description: "A股/港股/美股/商品同方向动量占比"
+    slope_window: 30
+    markets:
+      - "A股"
+      - "港股"
+      - "美股"
+      - "商品"
+    data_source: "AKShare"
+
+  # L3-05: 宏观-资产共振度
+  L3-05:
+    name: "宏观-资产共振度"
+    description: "FRED指标（10Y利率、CPI、PMI）与资产收益的滚动相关"
+    window: 90
+    macro_indicators:
+      - "GS10"
+      - "CPIAUCSL"
+      - "PMI"
+    data_source: "FRED+AKShare"
+
+  # L3-06: 板块轮动速度
+  L3-06:
+    name: "板块轮动速度"
+    description: "候选池内排名变化的标准差（排名越稳定，轮动越慢）"
+    rolling_weeks: 4
+    data_source: "derived"
+
+# ==================== L4 缺口层 ====================
+L4:
+  # L4-01: 隐含-实现波动率价差
+  L4-01:
+    name: "隐含-实现波动率价差"
+    description: "50ETF期权IV - 标的30d实现波动率"
+    option_type: "ATM"
+    maturity: "nearest"
+    data_source: "AKShare期权"
+
+  # L4-02: 期权偏度
+  L4-02:
+    name: "期权偏度"
+    description: "25Δ看跌IV - 25Δ看涨IV（恐惧的不对称性）"
+    delta_put: 25
+    delta_call: 25
+    maturity: "monthly"
+    data_source: "AKShare期权"
+
+  # L4-03: 认沽认购比
+  L4-03:
+    name: "认沽认购比"
+    description: "看跌期权成交量 / 看涨期权成交量"
+    data_source: "AKShare期权"
+
+  # L4-04: 流动性缺口
+  L4-04:
+    name: "流动性缺口"
+    description: "买一卖一价差/中间价的滚动均值"
+    window: 20
+    data_source: "mootdx"
+
+  # L4-05: 尾部风险度量
+  L4-05:
+    name: "尾部风险度量"
+    description: "滚动N日收益率的峰度（尾巴有多肥）"
+    window: 60
+    data_source: "mootdx"
+
+  # L4-06: 跳空缺口频率
+  L4-06:
+    name: "跳空缺口频率"
+    description: "N日内跳空幅度>1%的天数占比"
+    window: 30
+    gap_threshold: 0.01
+    data_source: "mootdx"
+
+  # L4-07: FRED压力合成
+  L4-07:
+    name: "FRED压力合成"
+    description: "美联储资产负债表变化率 + 信用利差(BAA-AAA)趋势"
+    fed_balance_sheet: "WALCL"
+    credit_spread_baa: "BAA"
+    credit_spread_aaa: "AAA"
+    data_source: "FRED"

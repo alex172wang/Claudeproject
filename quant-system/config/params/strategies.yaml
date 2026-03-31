@@ -1,0 +1,169 @@
+# 策略权重与阈值配置
+# 对应文档: docs/多维量化指标体系_v1.0.md 第六节
+
+# ==================== 默认权重配置 ====================
+default_weights:
+  # ETF轮动策略权重
+  rotation:
+    L1: 0.40  # 趋势层 - 核心驱动
+    L2: 0.20  # 结构层 - 信号过滤
+    L3: 0.20  # 共振层 - 轮动依据
+    L4: 0.20  # 缺口层 - 风控叠加
+
+  # 永久组合策略权重
+  permanent:
+    L1: 0.15  # 趋势层 - 辅助参考
+    L2: 0.20  # 结构层 - 再平衡触发
+    L3: 0.35  # 共振层 - 配比调整
+    L4: 0.30  # 缺口层 - 防御触发
+
+  # 主题仓位策略权重
+  thematic:
+    L1: 0.35  # 趋势层 - 入场依据
+    L2: 0.25  # 结构层 - 品质确认
+    L3: 0.15  # 共振层 - 主题验证
+    L4: 0.25  # 缺口层 - 止损/对冲
+
+# ==================== 策略触发规则 ====================
+trigger_rules:
+  # ETF轮动策略（周度执行）
+  rotation:
+    execution_frequency: "weekly"  # 周度执行
+    execution_day: "friday"      # 周五执行
+    execution_time: "14:45"      # 14:45执行
+
+    # 入选门槛
+    entry_threshold:
+      L1-02: true  # 必须通过EMA120过滤
+
+    # 系统性风险切换
+    systematic_risk:
+      L3-03_threshold: 70  # PC1解释率>70%时切入货币基金
+      cash_substitute: "511880"  # 银华日利ETF（货币基金）
+
+    # 恐慌防御
+    panic_defense:
+      L4_status: "panic_brewing"  # 恐慌酝酿状态
+      forced_allocation:
+        target: "518880"  # 黄金ETF
+        ratio: 0.50       # 强制配置50%仓位
+
+    # 持仓限制
+    holding_limits:
+      min_holding_days: 5  # 最小持有5个交易日
+      max_positions: 1     # 每次只持有1个品种
+
+  # 永久组合策略（月度/事件驱动再平衡）
+  permanent:
+    execution_frequency: "monthly"  # 月度检查
+    execution_day: "last_trading_day"  # 最后交易日
+    execution_time: "14:45"
+
+    # 目标配比（在strategies.yaml中定义，也可在品种池成员中覆盖）
+    target_allocation:
+      equity: 0.40    # 权益 40%
+      bond: 0.25     # 债券 25%
+      gold: 0.20     # 黄金 20%
+      cash: 0.15     # 现金 15%
+
+    # 再平衡带宽
+    rebalance_band: 0.05  # 偏离目标±5%触发再平衡
+
+    # 常规再平衡条件
+    routine_rebalance:
+      frequency: "monthly"
+
+    # 非常规再平衡触发
+    abnormal_triggers:
+      # L3相关性结构变化
+      L3-01:
+        description: "相关性结构变化触发非常规再平衡"
+        threshold: 0.30  # 相关系数变化超过30%
+
+      # L4 FRED压力信号
+      L4-07:
+        description: "FRED压力信号触发防御性调整"
+        fed_balance_change_threshold: 0.05  # 美联储资产负债表变化率>5%
+        credit_spread_widen: 0.50  # 信用利差走阔50bp
+
+      # L2回撤分形异常
+      L2-04:
+        description: "回撤分形异常触发紧急检视"
+        hurst_change_threshold: 0.15  # Hurst指数变化超过0.15
+
+    # 资产类别映射（用于再平衡时确定买入/卖出标的）
+    asset_class_mapping:
+      equity:
+        - "510300"  # 沪深300ETF
+        - "513500"  # 标普500ETF
+      bond:
+        - "511010"  # 国债ETF
+        - "511220"  # 信用债ETF
+      gold:
+        - "518880"  # 黄金ETF
+      cash:
+        - "511880"  # 银华日利ETF（货币基金）
+
+  # 主题仓位策略（事件驱动）
+  thematic:
+    execution_frequency: "event_driven"  # 事件驱动
+
+    # 入场条件（必须全部满足）
+    entry_conditions:
+      L1:
+        - indicator: "L1-01"
+          rule: "composite_slope > 0"  # 复合斜率为正
+        - indicator: "L1-02"
+          rule: "close > ema120"  # 收盘价在EMA120之上
+      L2:
+        - indicator: "L2-03"
+          rule: "volume_confirmation"  # 量价确认
+        - indicator: "L2-05"
+          rule: "body_ratio > 0.6"  # K线实体比>0.6
+      L3:
+        - indicator: "L3-04"
+          rule: "cross_market_consistency"  # 跨市场一致性
+
+    # 加仓条件
+    add_position_conditions:
+      composite_score_rising: true  # 综合得分持续上升
+      L4_status: "calm"  # L4状态为"平静"
+
+    # 减仓条件（满足任一即减仓）
+    reduce_position_conditions:
+      - indicator: "L4-02"
+        rule: "skew_spike"  # 期权偏度飙升
+      - indicator: "L3-04"
+        rule: "cross_market_breakdown"  # 跨市场一致性瓦解
+
+    # 清仓条件（满足任一即清仓）
+    exit_conditions:
+      - indicator: "L1-02"
+        rule: "close < ema120"  # 跌破EMA120
+      - indicator: "L4-05"
+        rule: "tail_risk_extreme"  # 尾部风险极端
+
+# ==================== 评分标准化参数 ====================
+scoring:
+  # 各维度得分范围
+  score_range:
+    min: 0
+    max: 100
+
+  # L4缺口层特殊处理（反向计分）
+  L4_reverse_scoring: true  # L4缺口越大得分越低
+
+  # 百分位转换参数
+  percentile:
+    lookback_days: 252  # 使用过去252个交易日（约1年）的历史数据计算百分位
+
+# ==================== 过拟合检测参数 ====================
+overfitting_detection:
+  # 样本内/样本外分割比例
+  in_out_ratio: 0.70
+
+  # 过拟合警告阈值
+  warning_threshold: 2.0  # in_out_sharpe_ratio > 2.0 时警告
+
+  # 自由度检查
+  degrees_of_freedom_check: true  # 当参数组合数 > 样本外交易次数时提示
