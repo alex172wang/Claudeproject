@@ -11,8 +11,8 @@ echo     量化交易系统 - 启动器
 echo ============================================
 echo.
 
-:: 设置工作目录
-cd /d "%~dp0"
+:: 设置工作目录（脚本所在目录的上级目录，即 quant-system）
+cd /d "%~dp0.."
 echo [1/5] 工作目录: %CD%
 
 :: 检查Python
@@ -26,24 +26,26 @@ if %errorlevel% neq 0 (
 for /f "tokens=2" %%a in ('python --version 2^>^&1') do set PYTHON_VERSION=%%a
 echo [2/5] Python版本: %PYTHON_VERSION%
 
-:: 检查虚拟环境
-if not exist "venv" (
+:: 检查虚拟环境（项目根目录的venv）
+if not exist "..\venv" (
     echo.
     echo 正在创建虚拟环境...
+    cd ..
     python -m venv venv
+    cd quant-system
     echo 虚拟环境创建完成。
 )
 
 :: 激活虚拟环境
 echo [3/5] 激活虚拟环境...
-call venv\Scripts\activate.bat
+call ..\venv\Scripts\activate.bat
 
 :: 检查依赖
 echo [4/5] 检查依赖项...
 pip list | findstr /i "django" >nul 2>&1
 if %errorlevel% neq 0 (
     echo 正在安装依赖项...
-    pip install -r requirements.txt
+    pip install -r ..\requirements.txt
     if %errorlevel% neq 0 (
         echo [错误] 依赖安装失败！
         pause
@@ -54,7 +56,6 @@ echo 依赖项检查完成。
 
 :: 检查数据库
 echo [5/5] 检查数据库...
-cd quant-system
 if not exist "db.sqlite3" (
     echo 正在初始化数据库...
     python manage.py makemigrations
@@ -93,8 +94,8 @@ echo 默认管理员账号:
 echo   用户名: admin
 echo   密码:   admin123
 echo.
-echo 按任意键打开浏览器访问 Dashboard...
-pause >nul
+echo 正在打开浏览器访问 Dashboard...
+timeout /t 2 /nobreak >nul
 
 :: 打开浏览器
 start http://localhost:8050

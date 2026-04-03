@@ -10,7 +10,8 @@
 - 自动打开浏览器
 
 使用方法:
-    python start_quant_system.py
+    双击 start_quant_system.bat 或
+    python scripts/start_quant_system.py
 
 可选参数:
     --no-browser    不自动打开浏览器
@@ -26,6 +27,11 @@ import webbrowser
 import platform
 from pathlib import Path
 
+
+# 获取项目路径
+SCRIPT_DIR = Path(__file__).parent.absolute()  # scripts/
+PROJECT_ROOT = SCRIPT_DIR.parent  # quant-system/
+VENV_DIR = PROJECT_ROOT.parent / "venv"  # venv at project root
 
 # 颜色定义
 class Colors:
@@ -50,6 +56,9 @@ def print_header():
 ╚═══════════════════════════════════════════════════════════╝
 {Colors.ENDC}
 """)
+    print(f"{Colors.OKCYAN}项目路径: {PROJECT_ROOT}{Colors.ENDC}")
+    print(f"{Colors.OKCYAN}虚拟环境: {VENV_DIR}{Colors.ENDC}")
+    print()
 
 
 def check_python():
@@ -66,10 +75,9 @@ def check_python():
 def check_venv():
     """检查虚拟环境"""
     print(f"{Colors.OKBLUE}[2/6]{Colors.ENDC} 检查虚拟环境...")
-    venv_path = Path("venv")
-    if not venv_path.exists():
+    if not VENV_DIR.exists():
         print(f"{Colors.WARNING}! 虚拟环境不存在，正在创建...{Colors.ENDC}")
-        result = subprocess.run([sys.executable, "-m", "venv", "venv"], capture_output=True)
+        result = subprocess.run([sys.executable, "-m", "venv", str(VENV_DIR)], capture_output=True)
         if result.returncode != 0:
             print(f"{Colors.FAIL}✗ 创建虚拟环境失败{Colors.ENDC}")
             return False
@@ -79,21 +87,19 @@ def check_venv():
     return True
 
 
+def get_python_path():
+    """获取 Python 解释器路径"""
+    if platform.system() == "Windows":
+        return str(VENV_DIR / "Scripts" / "python.exe")
+    else:
+        return str(VENV_DIR / "bin" / "python")
+
+
 def check_dependencies():
     """检查依赖项"""
     print(f"{Colors.OKBLUE}[3/6]{Colors.ENDC} 检查依赖项...")
 
-    # 检查是否在虚拟环境中
-    in_venv = hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix)
-
-    if not in_venv:
-        # 激活虚拟环境
-        if platform.system() == "Windows":
-            python_path = os.path.join("venv", "Scripts", "python.exe")
-        else:
-            python_path = os.path.join("venv", "bin", "python")
-    else:
-        python_path = sys.executable
+    python_path = get_python_path()
 
     # 尝试导入关键依赖
     try:
@@ -109,10 +115,10 @@ def check_dependencies():
     except Exception:
         print(f"{Colors.WARNING}! 依赖项未安装，正在安装...{Colors.ENDC}")
         # 安装依赖
-        req_file = Path("requirements.txt")
+        req_file = PROJECT_ROOT.parent / "requirements.txt"
         if req_file.exists():
             result = subprocess.run(
-                [python_path, "-m", "pip", "install", "-r", "requirements.txt"],
+                [python_path, "-m", "pip", "install", "-r", str(req_file)],
                 capture_output=True
             )
             if result.returncode == 0:
@@ -126,27 +132,19 @@ def check_database():
     """检查数据库"""
     print(f"{Colors.OKBLUE}[4/6]{Colors.ENDC} 检查数据库...")
 
-    db_file = Path("quant-system") / "db.sqlite3"
+    db_file = PROJECT_ROOT / "db.sqlite3"
     if db_file.exists():
         print(f"{Colors.OKGREEN}✓ 数据库已存在{Colors.ENDC}")
         return True
 
     print(f"{Colors.WARNING}! 数据库不存在，正在初始化...{Colors.ENDC}")
 
-    # 获取Python解释器路径
-    if platform.system() == "Windows":
-        python_path = os.path.join("venv", "Scripts", "python.exe")
-    else:
-        python_path = os.path.join("venv", "bin", "python")
-
-    # 进入项目目录
-    os.chdir("quant-system")
+    python_path = get_python_path()
 
     # 执行迁移
-    result = subprocess.run([python_path, "manage.py", "migrate"], capture_output=True)
+    result = subprocess.run([python_path, "manage.py", "migrate"], cwd=str(PROJECT_ROOT), capture_output=True)
     if result.returncode != 0:
         print(f"{Colors.FAIL}✗ 数据库初始化失败{Colors.ENDC}")
-        os.chdir("..")
         return False
 
     # 创建超级用户
@@ -158,9 +156,8 @@ if not User.objects.filter(username='admin').exists():
     print('Superuser created')
 """
     subprocess.run([python_path, "manage.py", "shell", "-c", create_superuser_cmd],
-                   capture_output=True)
+                   cwd=str(PROJECT_ROOT), capture_output=True)
 
-    os.chdir("..")
     print(f"{Colors.OKGREEN}✓ 数据库初始化完成{Colors.ENDC}")
     print(f"{Colors.OKCYAN}  管理员账号: admin / admin123{Colors.ENDC}")
     return True
@@ -170,11 +167,7 @@ def start_services(no_browser=False):
     """启动服务"""
     print(f"\n{Colors.OKBLUE}[5/6]{Colors.ENDC} 启动服务...")
 
-    # 获取Python解释器路径
-    if platform.system() == "Windows":
-        python_path = os.path.join("venv", "Scripts", "python.exe")
-    else:
-        python_path = os.path.join("venv", "bin", "python")
+    python_path = get_python_path()
 
     print(f"{Colors.OKGREEN}✓ 准备启动 Django 服务器...{Colors.ENDC}")
 
@@ -182,13 +175,13 @@ def start_services(no_browser=False):
     if platform.system() == "Windows":
         subprocess.Popen(
             [python_path, "manage.py", "runserver", "0.0.0.0:8000"],
-            cwd="quant-system",
+            cwd=str(PROJECT_ROOT),
             creationflags=subprocess.CREATE_NEW_CONSOLE
         )
     else:
         subprocess.Popen(
             [python_path, "manage.py", "runserver", "0.0.0.0:8000"],
-            cwd="quant-system",
+            cwd=str(PROJECT_ROOT),
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             start_new_session=True
@@ -205,13 +198,13 @@ def start_services(no_browser=False):
     if platform.system() == "Windows":
         subprocess.Popen(
             [python_path, "run_dashboard.py", "--port", "8050"],
-            cwd="quant-system",
+            cwd=str(PROJECT_ROOT),
             creationflags=subprocess.CREATE_NEW_CONSOLE
         )
     else:
         subprocess.Popen(
             [python_path, "run_dashboard.py", "--port", "8050"],
-            cwd="quant-system",
+            cwd=str(PROJECT_ROOT),
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             start_new_session=True
