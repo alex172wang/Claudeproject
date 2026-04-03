@@ -14,7 +14,17 @@ from plotly.subplots import make_subplots
 import pandas as pd
 import numpy as np
 
-from ..config import THEME
+# 导入主题配置
+try:
+    from ..config import THEME
+except ImportError:
+    # 绝对导入备用
+    import sys
+    import os
+    dashboard_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if dashboard_dir not in sys.path:
+        sys.path.insert(0, dashboard_dir)
+    from config import THEME
 
 
 def create_risk_tab() -> html.Div:

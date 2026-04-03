@@ -133,6 +133,13 @@ class BacktestTask(models.Model):
         help_text='回测任务当前状态'
     )
 
+    # 是否启用（控制任务是否可用）
+    is_active = models.BooleanField(
+        '是否启用',
+        default=True,
+        help_text='任务是否处于启用状态'
+    )
+
     # 时间戳
     created_at = models.DateTimeField('创建时间', auto_now_add=True)
     updated_at = models.DateTimeField('更新时间', auto_now=True)

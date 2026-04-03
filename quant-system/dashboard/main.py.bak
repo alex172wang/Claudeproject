@@ -28,20 +28,11 @@ if src_path not in sys.path:
 # 导入配置
 from .config import THEME
 
-# 导入数据适配器（带延迟加载保护）
-overview_data_adapter = None
-
-def get_overview_data_adapter():
-    """获取数据适配器（延迟导入避免循环导入）"""
-    global overview_data_adapter
-    if overview_data_adapter is None:
-        try:
-            from .data_adapter_v2 import overview_data_adapter as adapter
-            overview_data_adapter = adapter
-        except ImportError:
-            from data_adapter_v2 import overview_data_adapter as adapter
-            overview_data_adapter = adapter
-    return overview_data_adapter
+# 导入数据适配器
+try:
+    from .data_adapter_v2 import overview_data_adapter
+except ImportError:
+    from data_adapter_v2 import overview_data_adapter
 
 # 导入页面模块
 from .pages import (
@@ -178,12 +169,9 @@ def create_navbar() -> dbc.Navbar:
 def create_overview_tab() -> html.Div:
     """创建总览标签页"""
 
-    # 获取数据适配器
-    adapter = get_overview_data_adapter()
-
     # 获取真实数据
-    portfolio_summary = adapter.get_portfolio_summary()
-    today_summary = adapter.get_today_summary()
+    portfolio_summary = overview_data_adapter.get_portfolio_summary()
+    today_summary = overview_data_adapter.get_today_summary()
 
     return html.Div([
         # 关键指标卡片行
@@ -298,7 +286,7 @@ def create_overview_tab() -> html.Div:
                                     {'name': '回撤', 'id': 'drawdown'},
                                     {'name': '夏普', 'id': 'sharpe'},
                                 ],
-                                data=adapter.get_strategy_performance(),
+                                data=overview_data_adapter.get_strategy_performance(),
                                 style_header={
                                     'backgroundColor': THEME['bg_light'],
                                     'fontWeight': 'bold',
@@ -490,11 +478,8 @@ def register_callbacks(app: dash.Dash) -> None:
 
 def create_equity_curve_figure() -> go.Figure:
     """创建权益曲线图"""
-    # 获取数据适配器
-    adapter = get_overview_data_adapter()
-
     # 获取真实数据
-    dates, equity_values = adapter.get_equity_curve_data()
+    dates, equity_values = overview_data_adapter.get_equity_curve_data()
 
     # 转换为 numpy 数组用于计算
     equity = np.array(equity_values)
@@ -578,11 +563,8 @@ def create_equity_curve_figure() -> go.Figure:
 def create_position_pie_figure() -> go.Figure:
     """创建持仓分布饼图"""
 
-    # 获取数据适配器
-    adapter = get_overview_data_adapter()
-
     # 获取真实持仓数据
-    labels, values = adapter.get_position_distribution()
+    labels, values = overview_data_adapter.get_position_distribution()
     colors = ['#00d9ff', '#e94560', '#ffd700', '#ff6b9d', '#c792ea', '#5c6370']
 
     fig = go.Figure(data=[go.Pie(

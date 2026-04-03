@@ -149,10 +149,10 @@ class AlertRuleAdmin(admin.ModelAdmin):
 class AlertLogAdmin(admin.ModelAdmin):
     """预警日志管理后台"""
     list_display = [
-        'title', 'severity', 'status',
+        'title', 'severity', 'notification_status',
         'strategy', 'created_at', 'is_acknowledged'
     ]
-    list_filter = ['severity', 'status', 'is_acknowledged']
+    list_filter = ['severity', 'notification_status', 'is_acknowledged']
     search_fields = ['title', 'message', 'strategy__name']
     readonly_fields = ['created_at', 'updated_at']
     date_hierarchy = 'created_at'

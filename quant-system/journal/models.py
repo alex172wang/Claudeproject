@@ -364,3 +364,360 @@ class DeviationLog(models.Model):
         if self.system_pnl is not None and self.actual_pnl is not None:
             self.pnl_difference = self.actual_pnl - self.system_pnl
             self.save()
+
+
+class TradeRecord(models.Model):
+    """
+    交易记录
+    用于手动记录实际交易执行情况
+    """
+
+    # 关联信号（如果基于系统信号执行）
+    related_signal = models.ForeignKey(
+        'monitor.Signal',
+        on_delete=models.SET_NULL,
+        related_name='trade_records',
+        verbose_name='关联信号',
+        null=True,
+        blank=True
+    )
+
+    # 关联偏差记录（如果不匹配信号）
+    related_deviation = models.ForeignKey(
+        DeviationLog,
+        on_delete=models.SET_NULL,
+        related_name='trade_records',
+        verbose_name='关联偏差记录',
+        null=True,
+        blank=True
+    )
+
+    # 交易时间
+    trade_time = models.DateTimeField(
+        '交易时间',
+        default=timezone.now,
+        help_text='实际交易发生的时间'
+    )
+
+    # 交易日期（用于查询）
+    trade_date = models.DateField(
+        '交易日期',
+        help_text='对应的交易日期'
+    )
+
+    # 操作类型
+    ACTION_CHOICES = [
+        ('buy', '买入'),
+        ('sell', '卖出'),
+        ('add', '加仓'),
+        ('reduce', '减仓'),
+    ]
+    action = models.CharField(
+        '操作类型',
+        max_length=20,
+        choices=ACTION_CHOICES,
+        help_text='交易操作类型'
+    )
+
+    # 品种
+    etf = models.ForeignKey(
+        'portfolio.ETF',
+        on_delete=models.CASCADE,
+        related_name='trade_records',
+        verbose_name='品种'
+    )
+
+    # 数量
+    quantity = models.PositiveIntegerField(
+        '数量（股）',
+        help_text='交易数量'
+    )
+
+    # 成交价格
+    price = models.DecimalField(
+        '成交价（元）',
+        max_digits=10,
+        decimal_places=4,
+        help_text='实际成交价格'
+    )
+
+    # 手续费
+    commission = models.DecimalField(
+        '手续费（元）',
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        help_text='交易手续费'
+    )
+
+    # 总金额（自动计算）
+    total_amount = models.DecimalField(
+        '总金额（元）',
+        max_digits=15,
+        decimal_places=2,
+        help_text='总成交金额（含手续费）'
+    )
+
+    # 是否与信号一致
+    match_signal = models.BooleanField(
+        '与信号一致',
+        default=True,
+        help_text='是否与系统信号一致'
+    )
+
+    # 偏差说明（如果不一致）
+    deviation_note = models.TextField(
+        '偏差说明',
+        blank=True,
+        help_text='如果与信号不一致，说明原因'
+    )
+
+    # 交易备注
+    note = models.TextField(
+        '交易备注',
+        blank=True,
+        help_text='其他备注信息'
+    )
+
+    # 创建和更新信息
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='created_trade_records',
+        verbose_name='创建人'
+    )
+    created_at = models.DateTimeField('创建时间', auto_now_add=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='updated_trade_records',
+        verbose_name='更新人',
+        null=True,
+        blank=True
+    )
+    updated_at = models.DateTimeField('更新时间', auto_now=True)
+
+    class Meta:
+        verbose_name = '交易记录'
+        verbose_name_plural = '交易记录'
+        ordering = ['-trade_time']
+        indexes = [
+            models.Index(fields=['-trade_time']),
+            models.Index(fields=['etf', '-trade_time']),
+            models.Index(fields=['action', '-trade_time']),
+            models.Index(fields=['match_signal', '-trade_time']),
+        ]
+
+    def __str__(self):
+        return f"{self.trade_date} - {self.get_action_display()} - {self.etf.code} - {self.quantity}股"
+
+    def save(self, *args, **kwargs):
+        """保存时自动计算交易日期和总金额"""
+        if not self.trade_date:
+            self.trade_date = self.trade_time.date()
+
+        # 自动计算总金额
+        self.total_amount = (self.price * self.quantity) + (self.commission or 0)
+
+        super().save(*args, **kwargs)
+
+    def get_action_color(self):
+        """获取操作类型的颜色标识"""
+        color_map = {
+            'buy': 'success',
+            'sell': 'danger',
+            'add': 'info',
+            'reduce': 'warning',
+        }
+        return color_map.get(self.action, 'secondary')
+
+    def calculate_pnl(self):
+        """计算该笔交易的盈亏（需要持仓信息）"""
+        # TODO: 根据持仓成本计算盈亏
+        pass
+
+
+class Position(models.Model):
+    """
+    持仓记录
+    用于追踪当前持仓和持仓成本
+    """
+
+    # 用户
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='positions',
+        verbose_name='用户'
+    )
+
+    # 品种
+    etf = models.ForeignKey(
+        'portfolio.ETF',
+        on_delete=models.CASCADE,
+        related_name='positions',
+        verbose_name='品种'
+    )
+
+    # 持仓数量
+    quantity = models.IntegerField(
+        '持仓数量',
+        default=0,
+        help_text='正数为多头，负数为空头'
+    )
+
+    # 平均成本
+    avg_cost = models.DecimalField(
+        '平均成本',
+        max_digits=10,
+        decimal_places=4,
+        default=0,
+        help_text='持仓平均成本'
+    )
+
+    # 总成本
+    total_cost = models.DecimalField(
+        '总成本',
+        max_digits=15,
+        decimal_places=2,
+        default=0,
+        help_text='持仓总成本'
+    )
+
+    # 当前市值（需要外部更新）
+    market_value = models.DecimalField(
+        '市值',
+        max_digits=15,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text='当前市值'
+    )
+
+    # 未实现盈亏
+    unrealized_pnl = models.DecimalField(
+        '未实现盈亏',
+        max_digits=15,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text='未实现盈亏'
+    )
+
+    # 未实现收益率
+    unrealized_pnl_pct = models.DecimalField(
+        '未实现收益率(%)',
+        max_digits=10,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text='未实现收益率百分比'
+    )
+
+    # 首次建仓时间
+    first_trade_time = models.DateTimeField(
+        '首次建仓时间',
+        null=True,
+        blank=True
+    )
+
+    # 最后交易时间
+    last_trade_time = models.DateTimeField(
+        '最后交易时间',
+        null=True,
+        blank=True
+    )
+
+    # 是否活跃
+    is_active = models.BooleanField(
+        '是否活跃',
+        default=True,
+        help_text='是否还有持仓'
+    )
+
+    # 元数据
+    created_at = models.DateTimeField('创建时间', auto_now_add=True)
+    updated_at = models.DateTimeField('更新时间', auto_now=True)
+
+    class Meta:
+        verbose_name = '持仓'
+        verbose_name_plural = '持仓'
+        ordering = ['-updated_at']
+        unique_together = ['user', 'etf']
+        indexes = [
+            models.Index(fields=['user', '-updated_at']),
+            models.Index(fields=['etf', '-updated_at']),
+            models.Index(fields=['is_active', '-updated_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.etf.code} - {self.quantity}股 - 成本{self.avg_cost}"
+
+    def update_from_trade(self, trade_record):
+        """
+        根据交易记录更新持仓
+        """
+        if trade_record.action == 'buy':
+            # 买入：增加持仓，更新平均成本
+            total_cost = (self.avg_cost * self.quantity) + (trade_record.price * trade_record.quantity)
+            self.quantity += trade_record.quantity
+            self.avg_cost = total_cost / self.quantity if self.quantity > 0 else 0
+        elif trade_record.action == 'sell':
+            # 卖出：减少持仓，保持平均成本不变
+            self.quantity -= trade_record.quantity
+            if self.quantity <= 0:
+                self.quantity = 0
+                self.avg_cost = 0
+                self.is_active = False
+        elif trade_record.action == 'add':
+            # 加仓：同买入
+            total_cost = (self.avg_cost * self.quantity) + (trade_record.price * trade_record.quantity)
+            self.quantity += trade_record.quantity
+            self.avg_cost = total_cost / self.quantity if self.quantity > 0 else 0
+        elif trade_record.action == 'reduce':
+            # 减仓：同卖出
+            self.quantity -= trade_record.quantity
+            if self.quantity <= 0:
+                self.quantity = 0
+                self.avg_cost = 0
+                self.is_active = False
+
+        # 更新总成本和时间
+        self.total_cost = self.avg_cost * self.quantity
+        self.last_trade_time = trade_record.trade_time
+        if not self.first_trade_time:
+            self.first_trade_time = trade_record.trade_time
+
+        # 如果持仓不为0，设置为活跃
+        if self.quantity > 0:
+            self.is_active = True
+
+        self.save()
+
+    def update_market_value(self, current_price):
+        """
+        更新市值和盈亏
+        """
+        if self.quantity > 0 and current_price:
+            self.market_value = Decimal(str(current_price)) * self.quantity
+            self.unrealized_pnl = self.market_value - self.total_cost
+            if self.total_cost > 0:
+                self.unrealized_pnl_pct = (self.unrealized_pnl / self.total_cost) * 100
+            self.save()
+
+    def get_position_summary(self):
+        """
+        获取持仓摘要
+        """
+        return {
+            'etf_code': self.etf.code,
+            'etf_name': self.etf.name,
+            'quantity': self.quantity,
+            'avg_cost': float(self.avg_cost),
+            'total_cost': float(self.total_cost),
+            'market_value': float(self.market_value) if self.market_value else None,
+            'unrealized_pnl': float(self.unrealized_pnl) if self.unrealized_pnl else None,
+            'unrealized_pnl_pct': float(self.unrealized_pnl_pct) if self.unrealized_pnl_pct else None,
+            'is_active': self.is_active,
+        }
+

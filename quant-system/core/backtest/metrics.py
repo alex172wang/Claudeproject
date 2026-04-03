@@ -10,7 +10,7 @@
 """
 
 from typing import Dict, List, Optional, Tuple, Any
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 import pandas as pd
 import numpy as np

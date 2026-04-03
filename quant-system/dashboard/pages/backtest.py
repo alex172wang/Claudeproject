@@ -14,7 +14,32 @@ from plotly.subplots import make_subplots
 import pandas as pd
 import numpy as np
 
-from ..config import THEME
+# 导入主题配置
+try:
+    # 导入主题配置
+try:
+    from ..config import THEME
+except ImportError:
+    import sys
+    import os
+    dashboard_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if dashboard_dir not in sys.path:
+        sys.path.insert(0, dashboard_dir)
+    from config import THEME
+
+# 导入数据适配器
+try:
+    from ..data_adapter_v2 import data_adapter_v2
+except ImportError:
+    from data_adapter_v2 import data_adapter_v2
+except ImportError:
+    # 绝对导入备用
+    import sys
+    import os
+    dashboard_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if dashboard_dir not in sys.path:
+        sys.path.insert(0, dashboard_dir)
+    from config import THEME
 
 
 def create_backtest_tab() -> html.Div:

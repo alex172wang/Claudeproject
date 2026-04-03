@@ -27,14 +27,6 @@ from .l3_resonance import (
     L305MacroAssetResonance,
     L306RotationSpeed,
 )
-from .l3_resonance import (
-    L301RollingCorrelationMatrix,
-    L302CorrelationVelocity,
-    L303PCAExplainedVariance,
-    L304CrossMarketConsistency,
-    L305MacroAssetResonance,
-    L306RotationSpeed,
-)
 from .l4_gap import (
     L401IVRVSpread,
     L402OptionSkew,

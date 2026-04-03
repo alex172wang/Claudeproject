@@ -11,9 +11,9 @@ class BacktestTaskAdmin(admin.ModelAdmin):
     """回测任务管理后台"""
     list_display = [
         'name', 'strategy_type', 'status', 'pool',
-        'start_date', 'end_date', 'is_active'
+        'start_date', 'end_date', 'created_at'
     ]
-    list_filter = ['strategy_type', 'status', 'is_active', 'strategy_type']
+    list_filter = ['strategy_type', 'status', 'created_at']
     search_fields = ['name', 'task_code', 'description']
     readonly_fields = ['created_at', 'updated_at']
     date_hierarchy = 'start_date'
@@ -36,7 +36,7 @@ class BacktestTaskAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
         ('状态', {
-            'fields': ('status', 'is_active', 'created_by')
+            'fields': ('status', 'created_by')
         }),
         ('元数据', {
             'fields': ('created_at', 'updated_at', 'started_at', 'completed_at'),

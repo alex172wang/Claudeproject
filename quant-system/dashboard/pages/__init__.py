@@ -9,6 +9,7 @@ from .backtest import create_backtest_tab
 from .signals import create_signals_tab
 from .risk import create_risk_tab
 from .instruments import create_instruments_tab
+from .config import create_config_tab, register_config_callbacks
 
 __all__ = [
     'create_realtime_tab',
@@ -16,4 +17,6 @@ __all__ = [
     'create_signals_tab',
     'create_risk_tab',
     'create_instruments_tab',
+    'create_config_tab',
+    'register_config_callbacks',
 ]

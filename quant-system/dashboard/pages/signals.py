@@ -658,3 +658,58 @@ def generate_signals_table():
 
 # 页面布局实例
 layout = create_layout()
+
+
+def create_signals_tab():
+    """
+    兼容函数：为 dashboard/main.py 提供接口
+    返回策略信号监控标签页的内容
+    """
+    return html.Div([
+        # 标题区域
+        dbc.Row([
+            dbc.Col([
+                html.H4([
+                    html.I(className="fas fa-signal me-2"),
+                    "策略信号监控"
+                ], className="mb-2"),
+                html.P("基于L1-L4多维量化指标体系的实时信号生成系统",
+                       className="text-muted mb-0"),
+            ], width=12)
+        ], className="mb-4"),
+
+        # 使用说明提示
+        dbc.Row([
+            dbc.Col([
+                dbc.Alert([
+                    html.H6([
+                        html.I(className="fas fa-info-circle me-2"),
+                        "新版策略信号页面已启用"
+                    ], className="alert-heading"),
+                    html.P([
+                        "策略信号功能已迁移至独立的信号分析页面。",
+                        html.Br(),
+                        "新页面提供更完整的L1-L4指标分析、雷达图可视化和实时信号生成。"
+                    ], className="mb-2"),
+                    html.Hr(),
+                    html.P([
+                        dbc.Button(
+                            [html.I(className="fas fa-external-link-alt me-2"), "访问新版信号页面"],
+                            color="primary",
+                            href="/signals",
+                            external_link=True,
+                        ),
+                    ], className="mb-0"),
+                ], color="info", dismissable=True),
+            ], width=12)
+        ], className="mb-4"),
+
+        # 简化版指标卡片
+        dbc.Row([
+            dbc.Col(create_signal_overview_card("L1趋势层", 75, "强势", "#28a745"), width=3),
+            dbc.Col(create_signal_overview_card("L2结构层", 62, "中性偏多", "#ffc107"), width=3),
+            dbc.Col(create_signal_overview_card("L3共振层", 58, "中性", "#5c6370"), width=3),
+            dbc.Col(create_signal_overview_card("L4缺口层", 70, "偏多", "#17a2b8"), width=3),
+        ], className="mb-4"),
+
+    ])

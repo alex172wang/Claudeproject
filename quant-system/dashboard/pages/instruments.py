@@ -13,7 +13,85 @@ import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
 
-from ..config import THEME
+# 导入主题配置
+try:
+    from ..config import THEME
+except ImportError:
+    import sys
+    import os
+    dashboard_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if dashboard_dir not in sys.path:
+        sys.path.insert(0, dashboard_dir)
+    from config import THEME
+
+# 导入数据适配器
+try:
+    from ..data_adapter_v2 import data_adapter_v2
+except ImportError:
+    from data_adapter_v2 import data_adapter_v2
+
+
+# ============ 数据获取函数 ============
+
+def get_real_etf_list() -> list:
+    """获取真实ETF列表，优先从mootdx获取"""
+    try:
+        if data_adapter_v2 and data_adapter_v2._connected:
+            df = data_adapter_v2.get_etf_list_real()
+            if df is not None and not df.empty and len(df) > 10:
+                # 转换为字典列表
+                etf_list = []
+                for _, row in df.iterrows():
+                    code = str(row.get('code', ''))
+                    if code:
+                        etf_list.append({
+                            'code': code,
+                            'name': str(row.get('name', f"ETF{code}")),
+                            'market': str(row.get('market', 'SH')),
+                            'category': categorize_etf(code),
+                            'tracking_index': '',
+                            'fund_manager': '',
+                            'is_active': True,
+                            'list_date': ''
+                        })
+                print(f"[Instruments] 从mootdx获取 {len(etf_list)} 个ETF")
+                return etf_list
+    except Exception as e:
+        print(f"[Instruments] 获取真实ETF列表失败: {e}")
+
+    # 返回默认列表
+    return get_default_etf_list()
+
+
+def categorize_etf(code: str) -> str:
+    """根据代码分类ETF"""
+    cross_border = ['513', '1596', '1597', '1598']
+    commodity = ['518']
+    bond = ['511']
+
+    if any(code.startswith(p) for p in cross_border):
+        return 'cross_border'
+    elif any(code.startswith(p) for p in commodity):
+        return 'commodity'
+    elif any(code.startswith(p) for p in bond):
+        return 'bond'
+    else:
+        return 'equity'
+
+
+def get_default_etf_list() -> list:
+    """获取默认ETF列表"""
+    return [
+        {'code': '510300', 'name': '沪深300ETF', 'market': 'SH', 'category': 'equity', 'tracking_index': '沪深300指数', 'fund_manager': '华泰柏瑞', 'is_active': True, 'list_date': '2012-05-28'},
+        {'code': '510050', 'name': '上证50ETF', 'market': 'SH', 'category': 'equity', 'tracking_index': '上证50指数', 'fund_manager': '华夏基金', 'is_active': True, 'list_date': '2005-02-23'},
+        {'code': '510500', 'name': '中证500ETF', 'market': 'SH', 'category': 'equity', 'tracking_index': '中证500指数', 'fund_manager': '南方基金', 'is_active': True, 'list_date': '2013-03-15'},
+        {'code': '159915', 'name': '创业板ETF', 'market': 'SZ', 'category': 'equity', 'tracking_index': '创业板指数', 'fund_manager': '易方达', 'is_active': True, 'list_date': '2011-12-09'},
+        {'code': '588000', 'name': '科创50ETF', 'market': 'SH', 'category': 'equity', 'tracking_index': '科创50指数', 'fund_manager': '华夏基金', 'is_active': True, 'list_date': '2020-11-16'},
+        {'code': '513500', 'name': '标普500ETF', 'market': 'SH', 'category': 'cross_border', 'tracking_index': '标普500指数', 'fund_manager': '博时基金', 'is_active': True, 'list_date': '2016-12-01'},
+        {'code': '513100', 'name': '纳斯达克ETF', 'market': 'SH', 'category': 'cross_border', 'tracking_index': '纳斯达克100指数', 'fund_manager': '国泰基金', 'is_active': True, 'list_date': '2013-04-25'},
+        {'code': '518880', 'name': '黄金ETF', 'market': 'SH', 'category': 'commodity', 'tracking_index': '上海黄金交易所AU99.99', 'fund_manager': '华安基金', 'is_active': True, 'list_date': '2013-07-29'},
+        {'code': '511010', 'name': '国债ETF', 'market': 'SH', 'category': 'bond', 'tracking_index': '上证5年期国债指数', 'fund_manager': '国泰基金', 'is_active': True, 'list_date': '2013-03-25'},
+    ]
 
 
 # ============ 模拟数据（实际应来自Django模型或API） ============
