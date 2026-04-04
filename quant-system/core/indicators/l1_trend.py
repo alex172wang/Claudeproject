@@ -9,6 +9,13 @@ L1 趋势层指标实现
 - L1-05: FRED趋势共振
 """
 
+# 向后兼容别名（供scorer.py导入使用）
+CompositeSlopeMomentum = None
+EMATrendFilter = None
+TrendAcceleration = None
+PriceChannelPosition = None
+FREDTrendResonance = None
+
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, Optional
@@ -20,6 +27,7 @@ from .base import (
 
 
 @IndicatorRegistry.register
+# 定义实际类，并设置向后兼容别名
 class L101CompositeSlopeMomentum(BaseIndicator):
     """
     L1-01: 复合斜率动量
@@ -91,6 +99,9 @@ class L101CompositeSlopeMomentum(BaseIndicator):
             params=params,
         )
 
+
+# 设置向后兼容别名
+CompositeSlopeMomentum = L101CompositeSlopeMomentum
 
 @IndicatorRegistry.register
 class L102EMATrendFilter(BaseIndicator):

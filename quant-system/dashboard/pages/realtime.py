@@ -413,3 +413,17 @@ def create_order_book_row(label: str, price: float, volume: int, side: str) -> h
             'backgroundColor': THEME['bg_light'],
         }
     })
+
+
+def register_realtime_callbacks(app):
+    """注册实时监控页面的回调函数"""
+    from dash import Input, Output
+    from datetime import datetime
+
+    @app.callback(
+        Output('current-time', 'children'),
+        [Input('interval-component', 'n_intervals')]
+    )
+    def update_time(n):
+        """更新当前时间"""
+        return datetime.now().strftime('%Y-%m-%d %H:%M:%S')

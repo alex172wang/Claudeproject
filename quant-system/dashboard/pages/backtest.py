@@ -16,8 +16,6 @@ import numpy as np
 
 # 导入主题配置
 try:
-    # 导入主题配置
-try:
     from ..config import THEME
 except ImportError:
     import sys

@@ -61,7 +61,7 @@ if not exist "db.sqlite3" (
     python manage.py makemigrations
     python manage.py migrate
     echo 正在创建管理员用户...
-    echo from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin', '', 'admin123') | python manage.py shell
+    echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin', '', 'admin123')" | python manage.py shell
 )
 
 echo.

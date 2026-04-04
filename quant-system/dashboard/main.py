@@ -438,6 +438,9 @@ except ImportError:
 def register_callbacks(app: dash.Dash) -> None:
     """注册所有回调函数"""
 
+    # 延迟导入以避免循环导入
+    from .pages import register_realtime_callbacks as _reg_rtc
+
     @app.callback(
         Output('tab-content', 'children'),
         [Input('main-tabs', 'value')]
@@ -485,7 +488,7 @@ def register_callbacks(app: dash.Dash) -> None:
         return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     # 注册实时监控页面的回调
-    register_realtime_callbacks(app)
+    _reg_rtc(app)
 
 
 def create_equity_curve_figure() -> go.Figure:
@@ -618,6 +621,12 @@ def create_position_pie_figure() -> go.Figure:
     return fig
 
 
+# 创建全局 app 实例（供导入使用）
+app = None
+
 if __name__ == '__main__':
     app = create_app()
     app.run(debug=True, host='0.0.0.0', port=8050)
+else:
+    # 模块导入时创建 app
+    app = create_app()
