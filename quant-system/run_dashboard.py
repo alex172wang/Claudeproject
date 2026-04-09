@@ -14,9 +14,8 @@ import os
 
 # 添加项目路径
 project_root = os.path.dirname(os.path.abspath(__file__))
-src_path = os.path.join(project_root, 'src')
-if src_path not in sys.path:
-    sys.path.insert(0, src_path)
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 
 def main():
@@ -35,8 +34,8 @@ def main():
 
     parser.add_argument(
         '--host',
-        default='127.0.0.1',
-        help='主机地址 (默认: 127.0.0.1)'
+        default='0.0.0.0',
+        help='主机地址 (默认: 0.0.0.0)'
     )
 
     parser.add_argument(
@@ -54,7 +53,7 @@ def main():
 
     args = parser.parse_args()
 
-    # 导入并创建应用
+    # 导入并启动简化版仪表板
     print("=" * 60)
     print("量化交易系统 - 实时监控仪表板")
     print("=" * 60)
@@ -65,8 +64,13 @@ def main():
     print()
 
     try:
-        from dashboard import create_app
-        app = create_app()
+        # 直接运行完整版 dashboard 模块
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'quant_system.settings')
+
+        # 修改 sys.argv 传递参数给 dashboard
+        sys.argv = [sys.argv[0]]
+
+        from dashboard.main import app
         app.run(
             host=args.host,
             port=args.port,
@@ -74,11 +78,15 @@ def main():
         )
     except ImportError as e:
         print(f"错误: 无法导入仪表板模块: {e}")
+        import traceback
+        traceback.print_exc()
         print("\n请确保已安装依赖:")
         print("  pip install -r requirements.txt")
         sys.exit(1)
     except Exception as e:
         print(f"错误: 启动失败: {e}")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
 
 

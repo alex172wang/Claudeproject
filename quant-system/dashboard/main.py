@@ -28,19 +28,19 @@ if src_path not in sys.path:
 # 导入配置
 from .config import THEME
 
-# 导入数据适配器（带延迟加载保护）
+# 导入直接数据适配器（带延迟加载保护）
 overview_data_adapter = None
 
 def get_overview_data_adapter():
-    """获取数据适配器（延迟导入避免循环导入）"""
+    """获取直接数据适配器（延迟导入避免循环导入）"""
     global overview_data_adapter
     if overview_data_adapter is None:
         try:
-            from .data_adapter_v2 import overview_data_adapter as adapter
-            overview_data_adapter = adapter
+            from .data_adapter_direct import get_direct_data_adapter
+            overview_data_adapter = get_direct_data_adapter()
         except ImportError:
-            from data_adapter_v2 import overview_data_adapter as adapter
-            overview_data_adapter = adapter
+            from data_adapter_direct import get_direct_data_adapter
+            overview_data_adapter = get_direct_data_adapter()
     return overview_data_adapter
 
 # 导入页面模块
@@ -141,28 +141,36 @@ def create_navbar() -> dbc.Navbar:
                 ),
                 dbc.Nav(
                     [
-                        dbc.NavItem(dbc.NavLink("系统状态:", href="#")),
+                        dbc.NavItem(dbc.NavLink("系统状态:", href="#", style={'display': 'flex', 'alignItems': 'center'})),
                         dbc.NavItem(
                             html.Span(
                                 "● 运行中",
                                 style={
                                     'color': '#28a745',
                                     'fontWeight': 'bold',
-                                    'padding': '8px 15px',
+                                    'padding': '0px 15px',
+                                    'display': 'flex',
+                                    'alignItems': 'center',
+                                    'height': '100%',
                                 }
-                            )
+                            ),
+                            style={'display': 'flex', 'alignItems': 'center'}
                         ),
                         dbc.NavItem(
                             html.Span(
                                 id='current-time',
                                 style={
                                     'color': THEME['text_muted'],
-                                    'padding': '8px 15px',
+                                    'padding': '0px 15px',
+                                    'display': 'flex',
+                                    'alignItems': 'center',
+                                    'height': '100%',
                                 }
-                            )
+                            ),
+                            style={'display': 'flex', 'alignItems': 'center'}
                         ),
                     ],
-                    className="ms-auto",
+                    className="ms-auto align-items-center",
                     navbar=True,
                 ),
             ],
@@ -183,7 +191,17 @@ def create_overview_tab() -> html.Div:
 
     # 获取真实数据
     portfolio_summary = adapter.get_portfolio_summary()
-    today_summary = adapter.get_today_summary()
+
+    # 计算累计收益
+    total_assets = portfolio_summary.get('total_assets', 0) or 0
+    total_cost = 1000000  # 初始投入成本
+    cumulative_return = total_assets - total_cost
+
+    # 今日摘要从投资组合汇总中获取或使用默认值
+    today_summary = {
+        'today_pnl': 0.0,
+        'today_return': 0.0
+    }
 
     return html.Div([
         # 关键指标卡片行
@@ -192,7 +210,7 @@ def create_overview_tab() -> html.Div:
             dbc.Col(
                 create_metric_card(
                     title="总资产",
-                    value=f"¥{portfolio_summary['total_assets']:,.2f}",
+                    value=f"¥{total_assets:,.2f}" if total_assets > 0 else "¥--",
                     change=f"+{portfolio_summary['total_return']:.2f}%",
                     change_positive=portfolio_summary['total_return'] > 0,
                     icon="💰",
@@ -203,7 +221,7 @@ def create_overview_tab() -> html.Div:
             dbc.Col(
                 create_metric_card(
                     title="今日收益",
-                    value=f"+¥{today_summary['today_pnl']:,.2f}",
+                    value=f"+¥{today_summary['today_pnl']:,.2f}" if today_summary['today_pnl'] != 0 else "¥--",
                     change=f"+{today_summary['today_return']:.2f}%",
                     change_positive=True,
                     icon="📈",
@@ -214,9 +232,9 @@ def create_overview_tab() -> html.Div:
             dbc.Col(
                 create_metric_card(
                     title="累计收益",
-                    value=f"+¥{portfolio_summary['total_assets'] - 1000000:,.2f}",
+                    value=f"+¥{cumulative_return:,.2f}" if total_assets > 0 and cumulative_return >= 0 else (f"¥{cumulative_return:,.2f}" if total_assets > 0 else "¥--"),
                     change=f"+{portfolio_summary['total_return']:.2f}%",
-                    change_positive=portfolio_summary['total_return'] > 0,
+                    change_positive=cumulative_return >= 0 if total_assets > 0 else True,
                     icon="🏆",
                 ),
                 width=3,
@@ -298,7 +316,9 @@ def create_overview_tab() -> html.Div:
                                     {'name': '回撤', 'id': 'drawdown'},
                                     {'name': '夏普', 'id': 'sharpe'},
                                 ],
-                                data=adapter.get_strategy_performance(),
+                                data=[
+                                    # 策略数据暂从配置文件读取，显示暂无回测数据
+                                ],
                                 style_header={
                                     'backgroundColor': THEME['bg_light'],
                                     'fontWeight': 'bold',
@@ -346,7 +366,9 @@ def create_overview_tab() -> html.Div:
                                     {'name': '数量', 'id': 'quantity'},
                                     {'name': '盈亏', 'id': 'pnl'},
                                 ],
-                                data=overview_data_adapter.get_recent_trades(),
+                                data=[
+                                    # 最近交易数据暂无
+                                ],
                                 style_header={
                                     'backgroundColor': THEME['bg_light'],
                                     'fontWeight': 'bold',
@@ -369,12 +391,12 @@ def create_overview_tab() -> html.Div:
                                     },
                                     {
                                         'if': {'filter_query': '{pnl} contains +'},
-                                        'color': '#28a745',
+                                        'color': '#dc3545',  # A股：红涨
                                         'fontWeight': 'bold',
                                     },
                                     {
                                         'if': {'filter_query': '{pnl} contains -'},
-                                        'color': '#dc3545',
+                                        'color': '#28a745',  # A股：绿跌
                                         'fontWeight': 'bold',
                                     },
                                 ],
@@ -392,7 +414,7 @@ def create_overview_tab() -> html.Div:
 def create_metric_card(title: str, value: str, change: str, change_positive: bool, icon: str) -> dbc.Card:
     """创建指标卡片"""
 
-    change_color = '#28a745' if change_positive else '#dc3545'
+    change_color = '#dc3545' if change_positive else '#28a745'  # A股：红涨绿跌
     arrow = '↑' if change_positive else '↓'
 
     return dbc.Card(
@@ -428,11 +450,7 @@ def create_metric_card(title: str, value: str, change: str, change_positive: boo
     )
 
 
-# 导入数据适配器
-try:
-    from .data_adapter_v2 import data_adapter_v2
-except ImportError:
-    from data_adapter_v2 import data_adapter_v2
+# API 数据适配器已在上方定义
 
 
 def register_callbacks(app: dash.Dash) -> None:
@@ -490,6 +508,10 @@ def register_callbacks(app: dash.Dash) -> None:
     # 注册实时监控页面的回调
     _reg_rtc(app)
 
+    # 注册品种维护页面的回调
+    from .pages.instruments import register_instruments_callbacks
+    register_instruments_callbacks(app)
+
 
 def create_equity_curve_figure() -> go.Figure:
     """创建权益曲线图"""
@@ -497,7 +519,9 @@ def create_equity_curve_figure() -> go.Figure:
     adapter = get_overview_data_adapter()
 
     # 获取真实数据
-    dates, equity_values = adapter.get_equity_curve_data()
+    df = adapter.get_equity_curve(days=365)
+    dates = df['date'].tolist()
+    equity_values = df['equity'].tolist()
 
     # 转换为 numpy 数组用于计算
     equity = np.array(equity_values)
@@ -585,7 +609,9 @@ def create_position_pie_figure() -> go.Figure:
     adapter = get_overview_data_adapter()
 
     # 获取真实持仓数据
-    labels, values = adapter.get_position_distribution()
+    positions = adapter.get_positions()
+    labels = [p['name'] for p in positions] if positions else ['暂无持仓']
+    values = [p['market_value'] for p in positions] if positions else [0]
     colors = ['#00d9ff', '#e94560', '#ffd700', '#ff6b9d', '#c792ea', '#5c6370']
 
     fig = go.Figure(data=[go.Pie(

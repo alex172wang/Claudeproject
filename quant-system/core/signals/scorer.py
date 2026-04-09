@@ -12,36 +12,36 @@ import pandas as pd
 
 # 导入指标层
 from ..indicators.l1_trend import (
-    CompositeSlopeMomentum,
-    EMATrendFilter,
-    TrendAcceleration,
-    PriceChannelPosition,
-    FREDTrendResonance,
+    L101CompositeSlopeMomentum as CompositeSlopeMomentum,
+    L102EMATrendFilter as EMATrendFilter,
+    L103TrendAcceleration as TrendAcceleration,
+    L104PriceChannelPosition as PriceChannelPosition,
+    L105FREDTrendResonance as FREDTrendResonance,
 )
 from ..indicators.l2_structure import (
-    HurstExponent,
-    VolatilityStructureRatio,
-    VolumePatternDivergence,
-    DrawdownFractalDimension,
-    KLineEntityRatio,
-    VolatilityAutocorrelation,
+    L201HurstExponent as HurstExponent,
+    L202VolatilityStructureRatio as VolatilityStructureRatio,
+    L203VolumeDivergence as VolumePatternDivergence,
+    L204DrawdownFractal as DrawdownFractalDimension,
+    L205BodyRatio as KLineEntityRatio,
+    L206VolatilityAutocorrelation as VolatilityAutocorrelation,
 )
 from ..indicators.l3_resonance import (
-    RollingCorrelationMatrix,
-    CorrelationChangeRate,
-    PCAExplainedVariance,
-    CrossMarketConsistency,
-    MacroAssetResonance,
-    SectorRotationSpeed,
+    L301RollingCorrelationMatrix as RollingCorrelationMatrix,
+    L302CorrelationVelocity as CorrelationChangeRate,
+    L303PCAExplainedVariance as PCAExplainedVariance,
+    L304CrossMarketConsistency as CrossMarketConsistency,
+    L305MacroAssetResonance as MacroAssetResonance,
+    L306RotationSpeed as SectorRotationSpeed,
 )
 from ..indicators.l4_gap import (
-    IVRVSpread,
-    OptionSkew,
-    PutCallRatio,
-    LiquidityGap,
-    TailRisk,
-    GapFrequency,
-    FREDStressComposite,
+    L401IVRVSpread as IVRVSpread,
+    L402OptionSkew as OptionSkew,
+    L403PCRatio as PutCallRatio,
+    L404LiquidityGap as LiquidityGap,
+    L405TailRisk as TailRisk,
+    L406GapFrequency as GapFrequency,
+    L407FREDPressureComposite as FREDStressComposite,
 )
 from ..indicators.base import IndicatorResult, normalize_score
 

@@ -15,7 +15,7 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 
-from .broker import SimulatedBroker, Order, OrderSide, OrderType
+from .broker import SimulatedBroker, Order, OrderSide, OrderType, OrderStatus
 from .metrics import PerformanceAnalyzer
 from .results import BacktestResult
 

@@ -29,7 +29,7 @@ SECRET_KEY = os.environ.get(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver').split(',')
 
 
 # Application definition
@@ -45,19 +45,21 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
 
     # 第三方应用
-    # 'rest_framework',
-    # 'corsheaders',
-    # 'django_filters',
+    'rest_framework',
+    'corsheaders',
 
     # 项目应用
+    'data_sync',
     'portfolio',
     'backtest',
     'monitor',
     'journal',
+    'api',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -93,7 +95,7 @@ WSGI_APPLICATION = 'quant_system.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'data' / 'db' / 'quant_system.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
         'OPTIONS': {
             'timeout': 20,
         },
@@ -164,6 +166,110 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
+# =============================================================================
+# Django REST Framework 配置
+# =============================================================================
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
+    'DEFAULT_FILTER_BACKENDS': [
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ],
+}
+
+
+# =============================================================================
+# CORS 跨域配置
+# =============================================================================
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:8050',
+    'http://127.0.0.1:8050',
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+
+# =============================================================================
+# Django REST Framework 配置
+# =============================================================================
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
+    'DEFAULT_FILTER_BACKENDS': [
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/minute',
+        'user': '1000/minute'
+    },
+}
+
+
+# =============================================================================
+# CORS 跨域配置
+# =============================================================================
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:8050',  # Dashboard 开发服务器
+    'http://127.0.0.1:8050',
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+
+# =============================================================================
+# API 文档配置（可选）
+# =============================================================================
+
+# 如果后续需要自动生成 API 文档，可以安装 drf-spectacular
+# INSTALLED_APPS += ['drf_spectacular']
+# REST_FRAMEWORK['DEFAULT_SCHEMA_CLASS'] = 'drf_spectacular.openapi.AutoSchema'
+
+
 # 日志配置
 LOGGING = {
     'version': 1,
@@ -189,6 +295,7 @@ LOGGING = {
             'maxBytes': 10485760,  # 10MB
             'backupCount': 10,
             'formatter': 'verbose',
+            'encoding': 'utf-8',
         },
     },
     'root': {
@@ -241,7 +348,7 @@ QUANT_SYSTEM = {
         },
         'fred': {
             'enabled': True,
-            'api_key_env': 'FRED_API_KEY',
+            'api_key': '38d896ccbde4f60a872832d55163d091',
         },
     },
 
@@ -257,5 +364,21 @@ QUANT_SYSTEM = {
     'monitor': {
         'health_check_interval': 300,  # 健康检查间隔（秒）
         'signal_dedup_window': 3600,  # 信号去重窗口（秒）
+    },
+
+    # ETF池配置
+    'etf_pool': [
+        {'code': '510300', 'name': '沪深300ETF', 'category': 'equity', 'market': 'SH', 'is_active': True},
+        {'code': '510500', 'name': '中证500ETF', 'category': 'equity', 'market': 'SH', 'is_active': True},
+        {'code': '518880', 'name': '黄金ETF', 'category': 'commodity', 'market': 'SH', 'is_active': True},
+        {'code': '513500', 'name': '标普500ETF', 'category': 'cross_border', 'market': 'SH', 'is_active': True},
+        {'code': '159915', 'name': '创业板ETF', 'category': 'equity', 'market': 'SZ', 'is_active': True},
+    ],
+
+    # 数据同步配置
+    'data_sync': {
+        'quote_interval': 5,  # 实时行情同步间隔（秒）
+        'cache_cleanup_interval': 3600,  # 缓存清理间隔（秒）
+        'quote_cache_ttl': 10,  # 行情缓存过期时间（秒）
     },
 }

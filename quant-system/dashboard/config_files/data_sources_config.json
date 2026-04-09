@@ -1,0 +1,54 @@
+{
+  "mootdx": {
+    "name": "mootdx 通达信数据",
+    "enabled": true,
+    "params": {
+      "bestip": {
+        "type": "bool",
+        "default": true,
+        "desc": "自动选择最优IP"
+      },
+      "timeout": {
+        "type": "int",
+        "default": 30,
+        "min": 10,
+        "max": 120,
+        "step": 10,
+        "desc": "连接超时(秒)"
+      }
+    }
+  },
+  "akshare": {
+    "name": "AKShare 财经数据",
+    "enabled": true,
+    "params": {
+      "timeout": {
+        "type": "int",
+        "default": 30,
+        "min": 10,
+        "max": 120,
+        "step": 10,
+        "desc": "请求超时(秒)"
+      }
+    }
+  },
+  "fred": {
+    "name": "FRED 宏观数据",
+    "enabled": true,
+    "params": {
+      "api_key": {
+        "type": "string",
+        "default": "",
+        "desc": "FRED API Key"
+      },
+      "timeout": {
+        "type": "int",
+        "default": 30,
+        "min": 10,
+        "max": 120,
+        "step": 10,
+        "desc": "请求超时(秒)"
+      }
+    }
+  }
+}

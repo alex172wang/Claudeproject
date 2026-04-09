@@ -22,7 +22,7 @@ import warnings
 from scipy import stats
 from sklearn.model_selection import TimeSeriesSplit
 
-from .metrics import calculate_sharpe_ratio, calculate_max_drawdown, calculate_total_return
+from .metrics import calculate_drawdown_series, calculate_rolling_sharpe, calculate_calmar_ratio
 
 
 @dataclass

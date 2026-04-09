@@ -27,6 +27,16 @@ except ImportError:
         sys.path.insert(0, dashboard_dir)
     from config import THEME
 
+# 导入 Django 设置
+try:
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'quant_system.settings')
+    import django
+    django.setup()
+    from django.conf import settings as django_settings
+    FRED_API_KEY = django_settings.QUANT_SYSTEM.get('data_sources', {}).get('fred', {}).get('api_key', '')
+except Exception:
+    FRED_API_KEY = ''
+
 
 # ============================================================================
 # 配置数据定义（与 YAML 结构对齐）
@@ -298,7 +308,7 @@ DEFAULT_DATA_SOURCE_CONFIG = {
         "name": "FRED 宏观数据",
         "enabled": True,
         "params": {
-            "api_key": {"type": "string", "default": "", "desc": "FRED API Key"},
+            "api_key": {"type": "string", "default": FRED_API_KEY, "desc": "FRED API Key"},
             "timeout": {"type": "int", "default": 30, "min": 10, "max": 120, "step": 10, "desc": "请求超时(秒)"},
         }
     }
@@ -441,6 +451,7 @@ def create_indicators_config_panel() -> html.Div:
                         min=param_def.get("min", 0),
                         max=param_def.get("max", 1000),
                         step=param_def.get("step", 1),
+                        style={'backgroundColor': '#2d2d2d', 'color': 'white'},
                     )
                 elif param_def["type"] == "float":
                     control = dbc.Input(
@@ -450,21 +461,29 @@ def create_indicators_config_panel() -> html.Div:
                         min=param_def.get("min", 0),
                         max=param_def.get("max", 10),
                         step=param_def.get("step", 0.01),
+                        style={'backgroundColor': '#2d2d2d', 'color': 'white'},
                     )
                 elif param_def["type"] == "select":
                     control = dbc.Select(
                         id=input_id,
                         options=[{"label": opt, "value": opt} for opt in param_def["options"]],
                         value=param_def["default"],
+                        style={'backgroundColor': '#2d2d2d', 'color': 'white'},
                     )
                 elif param_def["type"] == "string":
                     control = dbc.Input(
                         id=input_id,
                         type="text",
                         value=param_def["default"],
+                        style={'backgroundColor': '#2d2d2d', 'color': 'white'},
                     )
                 else:
-                    control = dbc.Input(id=input_id, type="text", value=str(param_def["default"]))
+                    control = dbc.Input(
+                        id=input_id,
+                        type="text",
+                        value=str(param_def["default"]),
+                        style={'backgroundColor': '#2d2d2d', 'color': 'white'},
+                    )
 
                 param_inputs.append(
                     dbc.Row([
@@ -620,9 +639,15 @@ def create_data_sources_config_panel() -> html.Div:
                     type="text",
                     value=param_def["default"],
                     placeholder=param_def["desc"],
+                    style={'backgroundColor': '#2d2d2d', 'color': 'white'},
                 )
             else:
-                control = dbc.Input(id=input_id, type="text", value=str(param_def["default"]))
+                control = dbc.Input(
+                    id=input_id,
+                    type="text",
+                    value=str(param_def["default"]),
+                    style={'backgroundColor': '#2d2d2d', 'color': 'white'},
+                )
 
             param_inputs.append(
                 dbc.Row([
@@ -682,9 +707,15 @@ def create_backtest_config_panel() -> html.Div:
                 min=param_def.get("min", 0),
                 max=param_def.get("max", 100),
                 step=param_def.get("step", 1),
+                style={'backgroundColor': '#2d2d2d', 'color': 'white'},
             )
         else:
-            control = dbc.Input(id=input_id, type="text", value=str(param_def["default"]))
+            control = dbc.Input(
+                id=input_id,
+                type="text",
+                value=str(param_def["default"]),
+                style={'backgroundColor': '#2d2d2d', 'color': 'white'},
+            )
 
         # 转换为百分比显示
         display_value = param_def["default"]

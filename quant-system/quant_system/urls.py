@@ -22,10 +22,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # path('api/portfolio/', include('portfolio.urls')),
-    # path('api/backtest/', include('backtest.urls')),
-    # path('api/monitor/', include('monitor.urls')),
-    # path('api/journal/', include('journal.urls')),
+    path('api/', include('api.urls')),
 ]
 
 # 在开发环境中服务静态文件和媒体文件

@@ -1,6 +1,6 @@
-# Quant System - 多维量化交易系统
+# Quant System - 量化交易系统
 
-基于**多维量化指标体系**的 A 股量化交易平台，从**趋势(L1)、结构(L2)、共振(L3)、缺口(L4)** 四个维度构建市场认知框架。
+基于**四维量化指标体系**的 A 股量化交易平台，从**趋势(L1)、结构(L2)、共振(L3)、缺口(L4)** 四个维度构建市场认知框架。
 
 ---
 
@@ -9,8 +9,8 @@
 - **四维指标体系**：突破单一技术指标局限，多维度验证市场状态
 - **三层策略架构**：ETF轮动 / 永久组合 / 主题仓位，差异化配置
 - **动态信号合成**：L1-L4加权评分，策略自适应权重调整
-- **完整回测系统**：基于 backtrader 的回测与绩效分析
-- **执行偏差日志**：L5元层记录，持续优化决策质量
+- **实时数据同步**：基于 mootdx 的实时行情和 K 线数据
+- **Dashboard 可视化**：实时监控、K线图、ETF数据展示
 
 ---
 
@@ -19,36 +19,28 @@
 ### 安装依赖
 
 ```bash
-# 克隆项目
-git clone <repo-url>
 cd quant-system
-
-# 创建虚拟环境
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# 安装依赖
 pip install -r requirements.txt
 ```
 
-### 运行回测
+### 启动系统
 
-```bash
-# ETF轮动策略回测
-python main.py --strategy etf_rotation --start 2020-01-01 --end 2024-12-31
-
-# 永久组合策略回测
-python main.py --strategy permanent_portfolio --start 2020-01-01
-
-# 主题仓位策略回测
-python main.py --strategy thematic_position --start 2023-01-01
+**Windows 用户（推荐）：**
+```batch
+# 双击启动
+启动系统.bat
 ```
 
-### 查看帮助
-
+**命令行启动：**
 ```bash
-python main.py --help
+# 完整启动（初始化 + 数据同步 + Dashboard）
+python scripts/start_quant_system.py
+
+# 仅启动 Dashboard
+python run_dashboard.py
 ```
+
+启动后访问：http://localhost:8050
 
 ---
 
@@ -59,62 +51,96 @@ quant-system/
 ├── CLAUDE.md                      # 项目规范与配置
 ├── README.md                      # 本文件
 ├── requirements.txt               # Python依赖
-├── main.py                        # 主入口
-├── config/                        # 配置文件
-│   ├── __init__.py
-│   ├── settings.py                # 全局设置
-│   ├── weights.yaml               # 策略权重
-│   ├── thresholds.yaml            # 阈值配置
-│   └── pools.yaml                 # 候选池配置
-├── docs/                          # 文档
-│   └── 多维量化指标体系_v1.0.md    # 指标体系完整定义
-├── src/                           # 源代码
-│   ├── __init__.py
+├── manage.py                      # Django管理
+├── run_dashboard.py              # Dashboard启动脚本
+├── 启动系统.bat                   # Windows一键启动
+├── 启动Dashboard.bat               # Windows Dashboard启动
+├── 启动说明.md                     # 详细启动说明
+│
+├── quant_system/                  # Django项目配置
+│   ├── settings.py                # 全局配置（含ETF池）
+│   ├── urls.py                    # URL路由
+│   └── wsgi.py
+│
+├── core/                           # 核心计算层
 │   ├── data/                      # 数据获取层
-│   │   ├── __init__.py
-│   │   ├── loaders.py             # 数据加载器基类
-│   │   ├── mootdx_loader.py     # 通达信数据接口
-│   │   ├── akshare_loader.py    # AKShare数据接口
-│   │   └── fred_loader.py       # FRED宏观数据接口
-│   ├── indicators/               # 指标计算层
-│   │   ├── __init__.py
-│   │   ├── base.py               # 指标基类与工具
-│   │   ├── l1_trend.py          # L1 趋势层指标
-│   │   ├── l2_structure.py      # L2 结构层指标
-│   │   ├── l3_resonance.py       # L3 共振层指标
-│   │   └── l4_gap.py            # L4 缺口层指标
-│   ├── signals/                  # 信号合成层
-│   │   ├── __init__.py
-│   │   ├── synthesizer.py        # 四维评分合成器
-│   │   ├── rules.py              # 策略触发规则
-│   │   └── weights.py            # 动态权重管理
-│   ├── strategies/               # 策略执行层
-│   │   ├── __init__.py
-│   │   ├── base.py               # 策略基类
-│   │   ├── etf_rotation.py       # ETF轮动策略
-│   │   ├── permanent_portfolio.py # 永久组合策略
-│   │   └── thematic_position.py  # 主题仓位策略
-│   └── backtest/                 # 回测引擎
-│       ├── __init__.py
-│       ├── engine.py             # 回测引擎主类
-│       ├── analyzer.py           # 绩效分析器
-│       └── reporter.py           # 报告生成器
-├── logs/                         # 执行日志
-├── tests/                        # 测试代码
-│   ├── __init__.py
-│   ├── test_indicators.py
-│   ├── test_signals.py
-│   └── test_strategies.py
-└── data/                         # 数据目录（gitignore）
-    ├── raw/                      # 原始数据
-    └── processed/                # 处理后数据
+│   │   ├── base.py                # DataFetcher抽象基类
+│   │   ├── mootdx_fetcher.py      # A股/港股行情
+│   │   ├── akshare_fetcher.py     # ETF/财经数据
+│   │   ├── fred_fetcher.py        # 宏观数据
+│   │   └── cache.py               # 数据缓存
+│   ├── indicators/                # 指标计算层
+│   │   ├── base.py                # 指标基类
+│   │   ├── l1_trend.py           # L1趋势层（5个指标）
+│   │   ├── l2_structure.py       # L2结构层（6个指标）
+│   │   ├── l3_resonance.py       # L3共振层（6个指标）
+│   │   └── l4_gap.py             # L4缺口层（7个指标）
+│   ├── signals/                   # 信号合成层
+│   │   ├── scorer.py             # 四维评分器
+│   │   ├── composer.py           # 信号合成器
+│   │   └── trigger.py            # 策略触发器
+│   ├── backtest/                  # 回测引擎
+│   │   ├── engine.py              # 回测引擎
+│   │   └── ...
+│   └── live/                       # 实盘风控
+│       └── risk/                  # 风控规则
+│
+├── data_sync/                      # 数据同步服务
+│   ├── adapters.py                # 数据适配器
+│   ├── tasks.py                   # 同步任务
+│   ├── scheduler.py               # 调度器
+│   ├── sync_service.py            # 同步服务
+│   ├── cache_manager.py           # 缓存管理
+│   └── apps.py                    # Django App配置
+│
+├── api/                            # REST API
+│   ├── views.py                   # API视图
+│   ├── serializers.py             # 序列化器
+│   └── urls.py                    # API路由
+│
+├── dashboard/                      # Dash仪表板
+│   ├── main.py                    # 完整版Dashboard（多标签页）
+│   ├── simple_dashboard.py        # 简化版Dashboard（单页版）
+│   ├── data_adapter_direct.py     # 直接数据适配器
+│   ├── api_client.py              # API客户端
+│   ├── components/                # 组件库
+│   │   ├── charts.py              # 图表组件
+│   │   └── widgets.py             # UI组件
+│   └── pages/                     # 页面模块
+│
+├── portfolio/                      # 品种管理
+│   ├── models.py                  # ETF/Pool模型
+│   ├── admin.py                   # Django Admin
+│   └── management/commands/       # 管理命令
+│
+├── backtest/                       # 回测模块
+│   ├── models.py                  # 回测任务/结果模型
+│   └── admin.py
+│
+├── monitor/                        # 监控模块
+│   ├── models.py                  # 监控/信号模型
+│   └── admin.py
+│
+├── journal/                        # 交易日志
+│   ├── models.py                  # 决策/偏差日志模型
+│   └── admin.py
+│
+├── scripts/                        # 脚本工具
+│   └── start_quant_system.py      # 系统启动脚本
+│
+├── config/                         # 配置文件
+│   └── params/                    # 参数配置
+│
+├── docs/                           # 文档
+│   ├── PRD.md                     # 产品需求文档
+│   └── 多维量化指标体系_v1.0.md  # 指标体系定义
+│
+└── logs/                           # 日志目录
 ```
 
 ---
 
-## 核心概念
-
-### 四维指标体系
+## 四维指标体系
 
 | 层级 | 名称 | 哲学隐喻 | 核心功能 |
 |------|------|---------|---------|
@@ -131,22 +157,49 @@ quant-system/
 
 ---
 
+## 配置说明
+
+### ETF 池配置
+
+编辑 `quant_system/settings.py` 中的 `QUANT_SYSTEM` 配置：
+
+```python
+QUANT_SYSTEM = {
+    'etf_pool': [
+        {'code': '510300', 'name': '沪深300ETF', 'category': 'broad', 'market': 'sh'},
+        {'code': '159915', 'name': '创业板ETF', 'category': 'broad', 'market': 'sz'},
+        # 添加更多 ETF...
+    ],
+    'data_sync': {
+        'realtime_interval': 5,    # 实时行情同步间隔（秒）
+        'kline_ttl': 3600,         # K线缓存时间（秒）
+    }
+}
+```
+
+---
+
 ## 开发文档
 
 详见 [CLAUDE.md](CLAUDE.md) 了解：
 - 代码规范与注释要求
 - 开发工作流
 - 模块接口定义
-- 版本迭代路线图
+
+---
+
+## 技术栈
+
+| 组件 | 用途 | 版本 |
+|------|------|------|
+| Django | 后端框架 | 5.x |
+| Dash + Plotly | 前端 Dashboard | 2.x |
+| Django REST Framework | API框架 | 3.x |
+| pandas/numpy | 数据处理 | 2.x |
+| mootdx | A股数据接口 | - |
 
 ---
 
 ## 许可证
-
-[待定]
-
----
-
-## 联系方式
 
 [待定]

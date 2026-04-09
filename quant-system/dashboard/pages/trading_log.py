@@ -75,7 +75,8 @@ def create_layout():
                                     options=[],
                                     placeholder="选择品种",
                                     multi=True,
-                                    className="dash-dropdown"
+                                    className="dash-dropdown",
+                                    style={'backgroundColor': '#2d2d2d', 'color': 'white'},
                                 )
                             ], width=6),
                             dbc.Col([
@@ -89,7 +90,8 @@ def create_layout():
                                         {'label': '减仓', 'value': 'reduce'},
                                     ],
                                     placeholder="选择操作",
-                                    multi=True
+                                    multi=True,
+                                    style={'backgroundColor': '#2d2d2d', 'color': 'white'},
                                 )
                             ], width=6),
                         ], className="mb-3"),
@@ -100,7 +102,8 @@ def create_layout():
                                     id='filter-date-range',
                                     start_date_placeholder_text='开始日期',
                                     end_date_placeholder_text='结束日期',
-                                    display_format='YYYY-MM-DD'
+                                    display_format='YYYY-MM-DD',
+                                    style={'backgroundColor': '#2d2d2d', 'color': 'white'},
                                 )
                             ], width=12),
                         ], className="mb-3"),
@@ -310,7 +313,8 @@ def register_callbacks(app):
                             dcc.Dropdown(
                                 id="related_signal",
                                 options=[],
-                                placeholder="选择关联的系统信号（可选）"
+                                placeholder="选择关联的系统信号（可选）",
+                                style={'backgroundColor': '#2d2d2d', 'color': 'white'},
                             ),
                         ], width=6),
                         dbc.Col([
@@ -318,7 +322,8 @@ def register_callbacks(app):
                             dbc.Input(
                                 type="datetime-local",
                                 id="trade_time",
-                                value=datetime.now().strftime('%Y-%m-%dT%H:%M')
+                                value=datetime.now().strftime('%Y-%m-%dT%H:%M'),
+                                style={'backgroundColor': '#2d2d2d', 'color': 'white'},
                             ),
                         ], width=6),
                     ], className="mb-3"),
@@ -334,7 +339,8 @@ def register_callbacks(app):
                                     {'label': '加仓', 'value': 'add'},
                                     {'label': '减仓', 'value': 'reduce'},
                                 ],
-                                placeholder="选择操作类型"
+                                placeholder="选择操作类型",
+                                style={'backgroundColor': '#2d2d2d', 'color': 'white'},
                             ),
                         ], width=6),
                         dbc.Col([
@@ -342,7 +348,8 @@ def register_callbacks(app):
                             dcc.Dropdown(
                                 id="etf",
                                 options=[],  # 从后端加载
-                                placeholder="选择ETF品种"
+                                placeholder="选择ETF品种",
+                                style={'backgroundColor': '#2d2d2d', 'color': 'white'},
                             ),
                         ], width=6),
                     ], className="mb-3"),
@@ -354,7 +361,8 @@ def register_callbacks(app):
                                 type="number",
                                 id="quantity",
                                 placeholder="输入交易数量",
-                                min=1
+                                min=1,
+                                style={'backgroundColor': '#2d2d2d', 'color': 'white'},
                             ),
                         ], width=4),
                         dbc.Col([
@@ -363,7 +371,8 @@ def register_callbacks(app):
                                 type="number",
                                 id="price",
                                 placeholder="输入成交价格",
-                                step=0.0001
+                                step=0.0001,
+                                style={'backgroundColor': '#2d2d2d', 'color': 'white'},
                             ),
                         ], width=4),
                         dbc.Col([
@@ -372,7 +381,8 @@ def register_callbacks(app):
                                 type="number",
                                 id="commission",
                                 placeholder="输入手续费",
-                                value=0
+                                value=0,
+                                style={'backgroundColor': '#2d2d2d', 'color': 'white'},
                             ),
                         ], width=4),
                     ], className="mb-3"),

@@ -53,7 +53,7 @@ def create_metric_card(
     Returns:
         dbc.Card: Dash Bootstrap Card组件
     """
-    change_color = '#28a745' if change_positive else '#dc3545'
+    change_color = '#dc3545' if change_positive else '#28a745'  # A股：红涨绿跌
     arrow = '↑' if change_positive else '↓'
 
     card_body = [
@@ -126,7 +126,7 @@ def create_kpi_card(
     Returns:
         dbc.Card: Dash Bootstrap Card组件
     """
-    color = '#28a745' if positive else '#dc3545'
+    color = '#dc3545' if positive else '#28a745'  # A股：红涨绿跌
     arrow = '↑' if positive else '↓'
 
     return dbc.Card(

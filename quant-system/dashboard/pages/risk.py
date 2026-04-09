@@ -33,10 +33,10 @@ def create_risk_tab() -> html.Div:
     return html.Div([
         # 第一行：风险概览卡片
         dbc.Row([
-            dbc.Col(create_risk_overview_card("整体风险等级", "中等", "#ffc107", "建议关注"), width=3),
-            dbc.Col(create_risk_overview_card("仓位使用率", "68.5%", "#28a745", "正常范围"), width=3),
-            dbc.Col(create_risk_overview_card("日回撤", "-1.23%", "#28a745", "在限额内"), width=3),
-            dbc.Col(create_risk_overview_card("未处理告警", "2", "#ffc107", "需要关注"), width=3),
+            dbc.Col(create_risk_overview_card("整体风险等级", "--", "#ffc107", "暂无数据"), width=3),
+            dbc.Col(create_risk_overview_card("仓位使用率", "--", "#28a745", "暂无数据"), width=3),
+            dbc.Col(create_risk_overview_card("日回撤", "--", "#28a745", "暂无数据"), width=3),
+            dbc.Col(create_risk_overview_card("未处理告警", "0", "#28a745", "暂无数据"), width=3),
         ], className="mb-4"),
 
         # 第二行：风险限额监控
@@ -49,15 +49,15 @@ def create_risk_tab() -> html.Div:
                             dbc.Button("配置规则", size="sm", color="outline-primary"),
                         ], className="d-flex justify-content-between align-items-center"),
                         dbc.CardBody([
-                            create_risk_limit_bar("单日最大损失", "-1.23%", "-5.00%", 24.6, "success"),
+                            create_risk_limit_bar("单日最大损失", "--", "-5.00%", 0, "success"),
                             html.Br(),
-                            create_risk_limit_bar("最大回撤", "-8.50%", "-15.00%", 56.7, "success"),
+                            create_risk_limit_bar("最大回撤", "--", "-15.00%", 0, "success"),
                             html.Br(),
-                            create_risk_limit_bar("单仓位占比", "18.5%", "25.00%", 74.0, "warning"),
+                            create_risk_limit_bar("单仓位占比", "--", "25.00%", 0, "success"),
                             html.Br(),
-                            create_risk_limit_bar("总仓位使用", "68.5%", "80.00%", 85.6, "warning"),
+                            create_risk_limit_bar("总仓位使用", "--", "80.00%", 0, "success"),
                             html.Br(),
-                            create_risk_limit_bar("波动率(20日)", "12.3%", "20.00%", 61.5, "success"),
+                            create_risk_limit_bar("波动率(20日)", "--", "20.00%", 0, "success"),
                         ]),
                     ],
                     style={'backgroundColor': THEME['bg_card']},
@@ -110,10 +110,7 @@ def create_risk_tab() -> html.Div:
                                     {'name': '操作', 'id': 'action'},
                                 ],
                                 data=[
-                                    {'time': '2024-03-30 14:32:15', 'level': '警告', 'type': '仓位风险', 'description': '单仓位占比接近上限', 'current': '18.5%', 'threshold': '20%', 'status': '未处理', 'action': '查看'},
-                                    {'time': '2024-03-30 14:28:03', 'level': '提示', 'type': '波动率', 'description': '20日波动率较前期上升', 'current': '12.3%', 'threshold': '15%', 'status': '已处理', 'action': '查看'},
-                                    {'time': '2024-03-30 10:15:22', 'level': '严重', 'type': '日损失', 'description': '单日损失超过设定阈值', 'current': '-3.2%', 'threshold': '-2.5%', 'status': '已处理', 'action': '查看'},
-                                    {'time': '2024-03-29 15:45:10', 'level': '警告', 'type': '回撤', 'description': '当前回撤接近最大回撤限制', 'current': '-8.5%', 'threshold': '-10%', 'status': '已处理', 'action': '查看'},
+                                    # 暂无风险告警
                                 ],
                                 style_header={
                                     'backgroundColor': THEME['bg_light'],
@@ -217,70 +214,22 @@ def create_risk_limit_bar(name: str, current: str, limit: str, percentage: float
 
 def create_risk_history_chart() -> go.Figure:
     """创建风险指标历史趋势图"""
-
-    dates = pd.date_range(start='2024-01-01', end='2024-03-30', freq='D')
-    np.random.seed(42)
-
-    drawdown = np.cumsum(np.random.normal(0, 0.5, len(dates))) - 5
-    volatility = 10 + np.cumsum(np.random.normal(0, 0.1, len(dates)))
-    var_95 = -5 + np.cumsum(np.random.normal(0, 0.2, len(dates)))
-
-    fig = make_subplots(
-        rows=2, cols=1,
-        shared_xaxes=True,
-        vertical_spacing=0.1,
-        subplot_titles=('回撤与VaR', '波动率'),
+    # 暂无真实风险数据，返回空图表
+    fig = go.Figure()
+    fig.add_annotation(
+        text="暂无风险历史数据",
+        xref="paper", yref="paper",
+        x=0.5, y=0.5,
+        showarrow=False,
+        font=dict(size=16, color=THEME['text_muted']),
     )
-
-    fig.add_trace(
-        go.Scatter(
-            x=dates, y=drawdown,
-            mode='lines',
-            name='回撤',
-            line=dict(color='#e94560', width=1.5),
-            fill='tozeroy',
-            fillcolor='rgba(233, 69, 96, 0.2)',
-        ),
-        row=1, col=1,
-    )
-
-    fig.add_trace(
-        go.Scatter(
-            x=dates, y=var_95,
-            mode='lines',
-            name='VaR(95%)',
-            line=dict(color='#ffc107', width=1.5, dash='dash'),
-        ),
-        row=1, col=1,
-    )
-
-    fig.add_trace(
-        go.Scatter(
-            x=dates, y=volatility,
-            mode='lines',
-            name='波动率',
-            line=dict(color='#00d9ff', width=1.5),
-            fill='tozeroy',
-            fillcolor='rgba(0, 217, 255, 0.1)',
-        ),
-        row=2, col=1,
-    )
-
-    fig.add_hline(y=15, line_dash="dash", line_color="#e94560", line_width=1, row=2, col=1)
-
     fig.update_layout(
         template='plotly_dark',
         paper_bgcolor=THEME['bg_card'],
         plot_bgcolor=THEME['bg_card'],
         font=dict(color=THEME['text']),
-        showlegend=True,
-        legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1),
+        showlegend=False,
         margin=dict(l=50, r=50, t=80, b=50),
-        hovermode='x unified',
         height=400,
     )
-
-    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor=THEME['border'])
-    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor=THEME['border'])
-
     return fig

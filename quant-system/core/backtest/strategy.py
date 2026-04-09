@@ -335,24 +335,61 @@ class ETFRotationStrategy(StrategyBase):
         """
         计算ETF综合评分
 
-        简化版本：基于动量和价格位置
-        实际应使用完整的多维度指标系统
+        使用L1-L4多维度指标系统计算综合评分
         """
+        if symbol not in price_data:
+            return 50.0  # 默认中值
+
         data = price_data[symbol]
-        close = data['close']
 
-        # 这里简化处理，实际应该调用L1-L4指标系统
-        # 模拟一个基于近期涨跌幅的评分
-        if 'close_20_days_ago' in data:
-            momentum_20d = (close - data['close_20_days_ago']) / data['close_20_days_ago']
+        # 确保数据是DataFrame格式
+        if isinstance(data, pd.Series):
+            # Series转换为DataFrame
+            df = pd.DataFrame({
+                'open': data.get('open', data.get('close')),
+                'high': data.get('high', data.get('close')),
+                'low': data.get('low', data.get('close')),
+                'close': data['close'],
+                'volume': data.get('volume', 0),
+            })
+        elif hasattr(data, 'columns'):
+            df = data
         else:
-            momentum_20d = 0
+            return 50.0
 
-        # 将动量转换为0-100评分
-        score = 50 + momentum_20d * 1000  # 放大系数
-        score = max(0, min(100, score))  # 限制在0-100
+        # 检查数据量
+        if len(df) < 30:
+            return 50.0  # 数据不足返回中值
 
-        return score
+        # 使用四维评分器计算评分
+        try:
+            from core.signals.scorer import ETFFourDimensionalScorer
+
+            scorer = ETFFourDimensionalScorer(
+                l1_weight=self.config.get('l1_weight', 0.35),
+                l2_weight=self.config.get('l2_weight', 0.25),
+                l3_weight=self.config.get('l3_weight', 0.20),
+                l4_weight=self.config.get('l4_weight', 0.20)
+            )
+
+            fd_score = scorer.calculate_score(symbol, df, current_date)
+
+            # 返回加权得分
+            score = fd_score.weighted_score
+            return max(0, min(100, score))
+
+        except Exception as e:
+            # 评分计算失败时使用简化方法
+            close = df['close'].iloc[-1]
+            if len(df) >= 20:
+                close_20d_ago = df['close'].iloc[-20]
+                momentum_20d = (close - close_20d_ago) / close_20d_ago
+            else:
+                momentum_20d = 0
+
+            score = 50 + momentum_20d * 1000
+            score = max(0, min(100, score))
+            return score
 
     def _generate_clear_signals(
         self,
@@ -692,24 +729,49 @@ class ThematicStrategy(StrategyBase):
         theme_config: Dict,
         price_data: Dict[str, pd.Series]
     ) -> float:
-        """计算主题评分"""
-        # 简化版本：基于主题内ETF的平均动量
-        momentums = []
+        """计算主题评分 - 使用四维评分系统"""
+        scores = []
 
         for symbol in theme_config['symbols']:
-            if symbol in price_data:
-                data = price_data[symbol]
-                if 'close_20_days_ago' in data:
-                    momentum = (data['close'] - data['close_20_days_ago']) / data['close_20_days_ago']
-                    momentums.append(momentum)
+            if symbol not in price_data:
+                continue
 
-        if not momentums:
+            data = price_data[symbol]
+
+            # 转换为DataFrame格式
+            if isinstance(data, pd.Series):
+                df = pd.DataFrame({
+                    'open': data.get('open', data.get('close')),
+                    'high': data.get('high', data.get('close')),
+                    'low': data.get('low', data.get('close')),
+                    'close': data['close'],
+                    'volume': data.get('volume', 0),
+                })
+            elif hasattr(data, 'columns'):
+                df = data
+            else:
+                continue
+
+            if len(df) < 30:
+                continue
+
+            # 使用四维评分器
+            try:
+                from core.signals.scorer import ETFFourDimensionalScorer
+                scorer = ETFFourDimensionalScorer()
+                fd_score = scorer.calculate_score(symbol, df)
+                scores.append(fd_score.weighted_score)
+            except Exception:
+                # 失败时使用简化动量
+                if len(df) >= 20:
+                    momentum = (df['close'].iloc[-1] - df['close'].iloc[-20]) / df['close'].iloc[-20]
+                    scores.append(max(0, min(100, 50 + momentum * 500)))
+
+        if not scores:
             return 50  # 默认中值
 
-        avg_momentum = np.mean(momentums)
-        # 转换到0-100评分
-        score = 50 + avg_momentum * 500  # 放大
-        return max(0, min(100, score))
+        # 返回主题内ETF的平均评分
+        return max(0, min(100, np.mean(scores)))
 
     def _calculate_monthly_returns(self, equity_curve: pd.Series) -> pd.Series:
         """计算月度收益率"""

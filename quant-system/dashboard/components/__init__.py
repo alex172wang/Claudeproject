@@ -9,10 +9,6 @@ from .charts import (
     create_radar_chart,
     create_risk_gauge,
     create_signal_timeline,
-    create_backtest_equity_chart,
-    create_backtest_drawdown_chart,
-    create_monthly_heatmap,
-    create_layer_score_chart,
 )
 
 from .widgets import (
@@ -28,10 +24,6 @@ __all__ = [
     'create_radar_chart',
     'create_risk_gauge',
     'create_signal_timeline',
-    'create_backtest_equity_chart',
-    'create_backtest_drawdown_chart',
-    'create_monthly_heatmap',
-    'create_layer_score_chart',
     # UI组件
     'create_metric_card',
     'create_kpi_card',

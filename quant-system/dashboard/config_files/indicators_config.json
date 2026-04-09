@@ -1,0 +1,453 @@
+{
+  "L1": {
+    "name": "L1 趋势层",
+    "description": "趋势方向与动量强度",
+    "indicators": {
+      "L1-01": {
+        "name": "复合斜率动量",
+        "description": "30日斜率×R²(0.6) + 15日斜率×R²(0.4)",
+        "params": {
+          "long_window": {
+            "type": "int",
+            "default": 30,
+            "min": 10,
+            "max": 60,
+            "step": 5,
+            "desc": "长周期窗口"
+          },
+          "short_window": {
+            "type": "int",
+            "default": 15,
+            "min": 5,
+            "max": 30,
+            "step": 5,
+            "desc": "短周期窗口"
+          },
+          "long_weight": {
+            "type": "float",
+            "default": 0.6,
+            "min": 0.3,
+            "max": 0.8,
+            "step": 0.1,
+            "desc": "长周期权重"
+          },
+          "short_weight": {
+            "type": "float",
+            "default": 0.4,
+            "min": 0.2,
+            "max": 0.7,
+            "step": 0.1,
+            "desc": "短周期权重"
+          }
+        }
+      },
+      "L1-02": {
+        "name": "EMA趋势过滤",
+        "description": "收盘价 > EMA(N) 为多头环境",
+        "params": {
+          "period": {
+            "type": "int",
+            "default": 120,
+            "min": 60,
+            "max": 250,
+            "step": 10,
+            "desc": "EMA周期"
+          }
+        }
+      },
+      "L1-03": {
+        "name": "趋势加速度",
+        "description": "复合斜率动量的一阶差分（动量的动量）",
+        "params": {
+          "diff_window": {
+            "type": "int",
+            "default": 5,
+            "min": 3,
+            "max": 10,
+            "step": 1,
+            "desc": "差分窗口"
+          }
+        }
+      },
+      "L1-04": {
+        "name": "价格通道位置",
+        "description": "(Close - N日最低) / (N日最高 - N日最低)",
+        "params": {
+          "period": {
+            "type": "int",
+            "default": 60,
+            "min": 20,
+            "max": 120,
+            "step": 10,
+            "desc": "通道周期"
+          }
+        }
+      },
+      "L1-05": {
+        "name": "FRED趋势共振",
+        "description": "美10Y国债收益率斜率 + 美元指数DXY斜率",
+        "params": {
+          "yield_slope_window": {
+            "type": "int",
+            "default": 30,
+            "min": 10,
+            "max": 60,
+            "step": 5,
+            "desc": "收益率斜率窗口"
+          },
+          "dxy_slope_window": {
+            "type": "int",
+            "default": 30,
+            "min": 10,
+            "max": 60,
+            "step": 5,
+            "desc": "美元指数斜率窗口"
+          }
+        }
+      }
+    }
+  },
+  "L2": {
+    "name": "L2 结构层",
+    "description": "趋势品质与结构健康度",
+    "indicators": {
+      "L2-01": {
+        "name": "Hurst指数",
+        "description": "R/S分析法，衡量趋势持续性品质",
+        "params": {
+          "window": {
+            "type": "int",
+            "default": 60,
+            "min": 30,
+            "max": 120,
+            "step": 10,
+            "desc": "Hurst计算窗口"
+          }
+        }
+      },
+      "L2-02": {
+        "name": "波动率结构比",
+        "description": "短期实现波动率 / 长期实现波动率",
+        "params": {
+          "short_window": {
+            "type": "int",
+            "default": 5,
+            "min": 3,
+            "max": 10,
+            "step": 1,
+            "desc": "短期窗口"
+          },
+          "long_window": {
+            "type": "int",
+            "default": 30,
+            "min": 20,
+            "max": 60,
+            "step": 5,
+            "desc": "长期窗口"
+          }
+        }
+      },
+      "L2-03": {
+        "name": "成交量形态分歧",
+        "description": "价格新高时成交量相对MA(20)的偏离度",
+        "params": {
+          "volume_ma_period": {
+            "type": "int",
+            "default": 20,
+            "min": 10,
+            "max": 60,
+            "step": 5,
+            "desc": "成交量MA周期"
+          }
+        }
+      },
+      "L2-04": {
+        "name": "回撤分形维度",
+        "description": "最大回撤序列的Hurst指数（回撤是否有自相似性）",
+        "params": {
+          "rolling_window": {
+            "type": "int",
+            "default": 120,
+            "min": 60,
+            "max": 252,
+            "step": 20,
+            "desc": "滚动窗口"
+          }
+        }
+      },
+      "L2-05": {
+        "name": "K线实体比",
+        "description": "N日内实体占比均值（实体/振幅），衡量趋势纯净度",
+        "params": {
+          "period": {
+            "type": "int",
+            "default": 20,
+            "min": 5,
+            "max": 60,
+            "step": 5,
+            "desc": "计算周期"
+          }
+        }
+      },
+      "L2-06": {
+        "name": "波动率自相关",
+        "description": "日收益率绝对值的ACF(1)，衡量波动率聚集程度",
+        "params": {
+          "lag": {
+            "type": "int",
+            "default": 1,
+            "min": 1,
+            "max": 5,
+            "step": 1,
+            "desc": "滞后阶数"
+          },
+          "window": {
+            "type": "int",
+            "default": 30,
+            "min": 20,
+            "max": 90,
+            "step": 10,
+            "desc": "计算窗口"
+          }
+        }
+      }
+    }
+  },
+  "L3": {
+    "name": "L3 共振层",
+    "description": "跨市场/跨资产的协同性",
+    "indicators": {
+      "L3-01": {
+        "name": "滚动相关性矩阵",
+        "description": "候选池内所有资产两两滚动Pearson相关系数",
+        "params": {
+          "window": {
+            "type": "int",
+            "default": 60,
+            "min": 20,
+            "max": 120,
+            "step": 5,
+            "desc": "滚动窗口"
+          }
+        }
+      },
+      "L3-02": {
+        "name": "相关性变速",
+        "description": "L3-01的一阶差分，捕捉相关性瓦解/收敛速度",
+        "params": {
+          "diff_window": {
+            "type": "int",
+            "default": 5,
+            "min": 3,
+            "max": 10,
+            "step": 1,
+            "desc": "差分窗口"
+          }
+        }
+      },
+      "L3-03": {
+        "name": "PCA第一主成分解释率",
+        "description": "候选池收益率矩阵PCA，PC1方差解释比",
+        "params": {
+          "window": {
+            "type": "int",
+            "default": 60,
+            "min": 20,
+            "max": 120,
+            "step": 5,
+            "desc": "PCA窗口"
+          }
+        }
+      },
+      "L3-04": {
+        "name": "跨市场动量一致性",
+        "description": "A股/港股/美股/商品同方向动量占比",
+        "params": {
+          "slope_window": {
+            "type": "int",
+            "default": 30,
+            "min": 10,
+            "max": 60,
+            "step": 5,
+            "desc": "斜率计算窗口"
+          }
+        }
+      },
+      "L3-05": {
+        "name": "宏观-资产共振度",
+        "description": "FRED指标（10Y利率、CPI、PMI）与资产收益的滚动相关",
+        "params": {
+          "window": {
+            "type": "int",
+            "default": 90,
+            "min": 30,
+            "max": 252,
+            "step": 10,
+            "desc": "滚动窗口"
+          }
+        }
+      },
+      "L3-06": {
+        "name": "板块轮动速度",
+        "description": "候选池内排名变化的标准差（排名越稳定，轮动越慢）",
+        "params": {
+          "rolling_weeks": {
+            "type": "int",
+            "default": 4,
+            "min": 2,
+            "max": 12,
+            "step": 1,
+            "desc": "滚动周数"
+          }
+        }
+      }
+    }
+  },
+  "L4": {
+    "name": "L4 缺口层",
+    "description": "尾部风险与市场微观结构",
+    "indicators": {
+      "L4-01": {
+        "name": "隐含-实现波动率价差",
+        "description": "50ETF期权IV - 标的30d实现波动率",
+        "params": {
+          "option_type": {
+            "type": "select",
+            "default": "ATM",
+            "options": [
+              "ATM",
+              "OTM"
+            ],
+            "desc": "期权类型"
+          },
+          "maturity": {
+            "type": "select",
+            "default": "nearest",
+            "options": [
+              "nearest",
+              "monthly"
+            ],
+            "desc": "到期日选择"
+          }
+        }
+      },
+      "L4-02": {
+        "name": "期权偏度",
+        "description": "25Δ看跌IV - 25Δ看涨IV（恐惧的不对称性）",
+        "params": {
+          "delta_put": {
+            "type": "int",
+            "default": 25,
+            "min": 10,
+            "max": 40,
+            "step": 5,
+            "desc": "看跌期权Delta"
+          },
+          "delta_call": {
+            "type": "int",
+            "default": 25,
+            "min": 10,
+            "max": 40,
+            "step": 5,
+            "desc": "看涨期权Delta"
+          },
+          "maturity": {
+            "type": "select",
+            "default": "monthly",
+            "options": [
+              "nearest",
+              "monthly"
+            ],
+            "desc": "到期日选择"
+          }
+        }
+      },
+      "L4-03": {
+        "name": "认沽认购比",
+        "description": "看跌期权成交量 / 看涨期权成交量",
+        "params": {
+          "type": {
+            "type": "select",
+            "default": "volume",
+            "options": [
+              "volume",
+              "oi"
+            ],
+            "desc": "使用成交量或持仓量"
+          }
+        }
+      },
+      "L4-04": {
+        "name": "流动性缺口",
+        "description": "买一卖一价差/中间价的滚动均值",
+        "params": {
+          "window": {
+            "type": "int",
+            "default": 20,
+            "min": 5,
+            "max": 60,
+            "step": 5,
+            "desc": "滚动窗口"
+          }
+        }
+      },
+      "L4-05": {
+        "name": "尾部风险度量",
+        "description": "滚动N日收益率的峰度（尾巴有多肥）",
+        "params": {
+          "window": {
+            "type": "int",
+            "default": 60,
+            "min": 30,
+            "max": 252,
+            "step": 10,
+            "desc": "滚动窗口"
+          }
+        }
+      },
+      "L4-06": {
+        "name": "跳空缺口频率",
+        "description": "N日内跳空幅度>1%的天数占比",
+        "params": {
+          "window": {
+            "type": "int",
+            "default": 30,
+            "min": 10,
+            "max": 90,
+            "step": 5,
+            "desc": "观察窗口"
+          },
+          "gap_threshold": {
+            "type": "float",
+            "default": 0.01,
+            "min": 0.005,
+            "max": 0.05,
+            "step": 0.005,
+            "desc": "跳空阈值"
+          }
+        }
+      },
+      "L4-07": {
+        "name": "FRED压力合成",
+        "description": "美联储资产负债表变化率 + 信用利差(BAA-AAA)趋势",
+        "params": {
+          "fed_balance_sheet": {
+            "type": "string",
+            "default": "WALCL",
+            "desc": "美联储资产负债表代码"
+          },
+          "credit_spread_baa": {
+            "type": "string",
+            "default": "BAA",
+            "desc": "BAA信用利差代码"
+          },
+          "credit_spread_aaa": {
+            "type": "string",
+            "default": "AAA",
+            "desc": "AAA信用利差代码"
+          }
+        }
+      }
+    }
+  }
+}

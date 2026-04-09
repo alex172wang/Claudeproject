@@ -19,13 +19,13 @@ import os
 # 添加项目路径
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# 导入数据适配器
+# 导入 API 数据适配器
 try:
-    from dashboard.data_adapter_v2 import DashboardDataAdapterV2
-    data_adapter = DashboardDataAdapterV2()
-    DATA_SOURCE = "real" if data_adapter._connected else "mock"
+    from dashboard.data_adapter_api import get_api_data_adapter
+    data_adapter = get_api_data_adapter()
+    DATA_SOURCE = "api"
 except Exception as e:
-    print(f"[Signals] 数据适配器加载失败: {e}")
+    print(f"[Signals] API 数据适配器加载失败: {e}")
     data_adapter = None
     DATA_SOURCE = "mock"
 
@@ -73,7 +73,8 @@ def create_layout():
                                     for code, info in ETF_MAP.items()],
                             value='510300',
                             placeholder="选择ETF",
-                            className="mb-3"
+                            className="mb-3",
+                            style={'backgroundColor': '#2d2d2d', 'color': 'white'},
                         ),
                         html.Label("时间范围:", className="form-label"),
                         dcc.Slider(
@@ -303,37 +304,22 @@ def get_etf_data(code, days):
     """获取ETF数据"""
     global data_adapter
 
-    if data_adapter and data_adapter._connected:
+    if data_adapter:
         try:
-            df = data_adapter.get_etf_price_real(code, days)
+            df = data_adapter.get_etf_kline(code, days)
             if df is not None and not df.empty:
                 return df
         except Exception as e:
-            print(f"[Signals] 获取真实数据失败: {e}")
+            print(f"[Signals] 获取API数据失败: {e}")
 
     # 使用模拟数据
     return generate_mock_data(code, days)
 
 
 def generate_mock_data(code, days):
-    """生成模拟数据"""
-    np.random.seed(42)
-    dates = pd.date_range(end=datetime.now(), periods=days, freq='B')
-
-    initial_price = np.random.uniform(2, 8)
-    returns = np.random.normal(0.0005, 0.015, len(dates))
-    prices = initial_price * (1 + returns).cumprod()
-
-    df = pd.DataFrame({
-        'date': dates,
-        'open': prices * np.random.uniform(0.995, 1.005, len(dates)),
-        'high': prices * np.random.uniform(1.00, 1.02, len(dates)),
-        'low': prices * np.random.uniform(0.98, 1.00, len(dates)),
-        'close': prices,
-        'volume': np.random.randint(1000000, 50000000, len(dates)),
-    })
-
-    return df
+    """获取模拟数据（当API不可用时）"""
+    # 不再生成随机数据，返回空DataFrame
+    return pd.DataFrame(columns=['date', 'open', 'high', 'low', 'close', 'volume'])
 
 
 def calculate_l1_score(df):
@@ -551,8 +537,8 @@ def create_price_chart(data):
         low=df['low'],
         close=df['close'],
         name='K线',
-        increasing_line_color='#26a69a',
-        decreasing_line_color='#ef5350'
+        increasing_line_color='#dc3545',  # A股：红涨
+        decreasing_line_color='#28a745'   # A股：绿跌
     ), row=1, col=1)
 
     # 添加均线
@@ -658,6 +644,19 @@ def generate_signals_table():
 
 # 页面布局实例
 layout = create_layout()
+
+
+def create_signal_overview_card(title: str, score: int, status: str, color: str) -> dbc.Card:
+    """创建信号概览卡片"""
+    return dbc.Card(
+        dbc.CardBody([
+            html.H6(title, className="text-muted mb-2"),
+            html.H3(f"{score}", style={'color': color, 'fontWeight': 'bold'}),
+            html.Small(status, className="text-muted"),
+        ]),
+        className="text-center shadow-sm",
+        style={'borderLeft': f'4px solid {color}'}
+    )
 
 
 def create_signals_tab():

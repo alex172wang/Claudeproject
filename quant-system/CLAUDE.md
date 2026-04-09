@@ -37,7 +37,7 @@ quant-system/
 ├── docs/
 │   ├── 多维量化指标体系_v1.0.md    # 指标体系完整定义
 │   └── CONTRIBUTING.md            # 贡献规范（Git/审查/发布流程）
-├── src/
+├── core/
 │   ├── data/                      # 数据获取层（mootdx/AKShare/FRED）
 │   ├── indicators/                # L1-L4 各层指标计算
 │   │   ├── base.py                # 指标基类与工具方法
@@ -113,7 +113,7 @@ class MACrossStrategy(bt.Strategy):
 
 ### 指标开发
 
-- 所有指标继承 `src/indicators/base.py` 中的 `BaseIndicator`
+- 所有指标继承 `core/indicators/base.py` 中的 `BaseIndicator`
 - 指标输出统一归一化到 `[0, 100]` 评分
 - 指标按 L1-L4 层级组织，文件命名 `l{N}_{name}.py`
 - 新指标必须在 `docs/多维量化指标体系_v1.0.md` 中有对应定义
@@ -163,9 +163,28 @@ results = engine.run()
 pip install -r requirements.txt   # 安装依赖
 python main.py                     # 运行回测
 python -m pytest tests/            # 运行测试
-black src/ config/ tests/          # 代码格式化
-mypy src/                          # 类型检查
+pytest tests/smoke_test.py -v     # 运行启动冒烟测试（每次改代码后必跑）
+black core/ config/ tests/          # 代码格式化
+mypy core/                          # 类型检查
 ```
+
+## 测试规范
+
+### 启动冒烟测试（smoke_test.py）
+
+每次修改代码版本后，**必须**运行启动冒烟测试，确保系统能正常启动：
+
+```bash
+pytest tests/smoke_test.py -v
+```
+
+该测试验证以下内容：
+- Django 核心模块导入链完整（捕获 ImportError、字段名错误等）
+- Django runserver 能正常启动并响应 HTTP 请求
+- Dashboard 能正常启动（环境无关问题时 skip）
+- Django + Dashboard 同时启动正常运行
+
+如测试失败，说明代码改动引入了启动级错误，必须修复后才能继续。
 
 ---
 
