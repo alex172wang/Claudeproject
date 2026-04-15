@@ -83,6 +83,9 @@ def create_layout() -> html.Div:
     return html.Div(
         style={'backgroundColor': THEME['bg_dark'], 'minHeight': '100vh'},
         children=[
+            # URL 路由（支持直接导航到 /instruments 等路径）
+            dcc.Location(id='url', refresh=False),
+
             # 顶部导航栏
             create_navbar(),
 

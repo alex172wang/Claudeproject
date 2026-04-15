@@ -205,7 +205,7 @@ class L103TrendAcceleration(BaseIndicator):
         # 计算动量的差分（加速度）
         if len(close) >= params['diff_window'] + 5:
             momentum_series = close.rolling(window=20).apply(
-                lambda x: calculate_slope(x, len(x)), raw=True
+                lambda x: calculate_slope(x, len(x)), raw=False
             )
             acceleration = momentum_series.diff(params['diff_window']).iloc[-1]
         else:

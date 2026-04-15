@@ -304,23 +304,23 @@ def create_add_etf_modal() -> dbc.Modal:
         dbc.ModalHeader("新增 ETF 品种"),
         dbc.ModalBody([
             dbc.Form([
-                dbc.FormGroup([
+                html.Div([
                     dbc.Label("ETF 代码"),
                     dbc.Input(id="add-etf-code", placeholder="例如：510300", maxLength=6),
                     dbc.FormText("请输入6位ETF代码"),
                 ]),
-                dbc.FormGroup([
+                html.Div([
                     dbc.Label("ETF 名称"),
                     dbc.Input(id="add-etf-name", placeholder="例如：沪深300ETF"),
                 ]),
-                dbc.FormGroup([
+                html.Div([
                     dbc.Label("市场"),
                     dbc.Select(id="add-etf-market", options=[
                         {'label': '上交所 (SH)', 'value': 'SH'},
                         {'label': '深交所 (SZ)', 'value': 'SZ'},
                     ], value='SH'),
                 ]),
-                dbc.FormGroup([
+                html.Div([
                     dbc.Label("类别"),
                     dbc.Select(id="add-etf-category", options=[
                         {'label': '权益型', 'value': 'equity'},
@@ -337,7 +337,7 @@ def create_add_etf_modal() -> dbc.Modal:
             dbc.Button("取消", id="btn-cancel-add-etf", color="secondary"),
             dbc.Button("确认添加", id="btn-confirm-add-etf", color="primary"),
         ]),
-    ], id="add-etf-modal", is_backdrop=True, autoFocus=False)
+    ], id="add-etf-modal", backdrop=True, autofocus=False)
 
 
 def create_batch_delete_modal() -> dbc.Modal:
@@ -353,7 +353,7 @@ def create_batch_delete_modal() -> dbc.Modal:
             dbc.Button("取消", id="btn-cancel-batch-delete", color="secondary"),
             dbc.Button("确认删除", id="btn-confirm-batch-delete", color="danger"),
         ]),
-    ], id="batch-delete-modal", is_backdrop=True, autoFocus=False)
+    ], id="batch-delete-modal", backdrop=True, autofocus=False)
 
 
 def create_add_pool_modal() -> dbc.Modal:
@@ -362,16 +362,16 @@ def create_add_pool_modal() -> dbc.Modal:
         dbc.ModalHeader("新增品种池"),
         dbc.ModalBody([
             dbc.Form([
-                dbc.FormGroup([
+                html.Div([
                     dbc.Label("池代码"),
                     dbc.Input(id="add-pool-code", placeholder="例如：rotation_pool"),
                     dbc.FormText("建议使用有意义的代码，如 rotation_pool"),
                 ]),
-                dbc.FormGroup([
+                html.Div([
                     dbc.Label("池名称"),
                     dbc.Input(id="add-pool-name", placeholder="例如：ETF轮动池"),
                 ]),
-                dbc.FormGroup([
+                html.Div([
                     dbc.Label("用途"),
                     dbc.Select(id="add-pool-purpose", options=[
                         {'label': 'ETF轮动', 'value': 'rotation'},
@@ -380,7 +380,7 @@ def create_add_pool_modal() -> dbc.Modal:
                         {'label': '自定义', 'value': 'custom'},
                     ], value='custom'),
                 ]),
-                dbc.FormGroup([
+                html.Div([
                     dbc.Label("描述"),
                     dbc.Textarea(id="add-pool-description", placeholder="品种池描述（可选）", rows=3),
                 ]),
@@ -390,7 +390,7 @@ def create_add_pool_modal() -> dbc.Modal:
             dbc.Button("取消", id="btn-cancel-add-pool", color="secondary"),
             dbc.Button("确认创建", id="btn-confirm-add-pool", color="primary"),
         ]),
-    ], id="add-pool-modal", is_backdrop=True, autoFocus=False)
+    ], id="add-pool-modal", backdrop=True, autofocus=False)
 
 
 def create_delete_pool_modal() -> dbc.Modal:
@@ -406,7 +406,7 @@ def create_delete_pool_modal() -> dbc.Modal:
             dbc.Button("取消", id="btn-cancel-delete-pool", color="secondary"),
             dbc.Button("确认删除", id="btn-confirm-delete-pool", color="danger"),
         ]),
-    ], id="delete-pool-modal", is_backdrop=True, autoFocus=False)
+    ], id="delete-pool-modal", backdrop=True, autofocus=False)
 
 
 def create_pool_members_modal() -> dbc.Modal:
@@ -420,7 +420,7 @@ def create_pool_members_modal() -> dbc.Modal:
                     html.H6("添加成员"),
                     dbc.InputGroup([
                         dbc.Input(id="add-member-code", placeholder="ETF代码，如 510300"),
-                        dbc.InputGroupAppend(
+                        dbc.InputGroupText(
                             dbc.Button("添加", id="btn-add-pool-member", color="success", size="sm"),
                         ),
                     ]),
@@ -429,7 +429,7 @@ def create_pool_members_modal() -> dbc.Modal:
                     html.H6("批量添加"),
                     dbc.InputGroup([
                         dbc.Textarea(id="batch-add-members", placeholder="多个代码，逗号或换行分隔", rows=2),
-                        dbc.InputGroupAppend(
+                        dbc.InputGroupText(
                             dbc.Button("批量添加", id="btn-batch-add-members", color="primary", size="sm"),
                         ),
                     ]),
@@ -466,7 +466,7 @@ def create_pool_members_modal() -> dbc.Modal:
         dbc.ModalFooter([
             dbc.Button("关闭", id="btn-close-pool-members", color="secondary"),
         ]),
-    ], id="pool-members-modal", size="lg", is_backdrop=True, autoFocus=False)
+    ], id="pool-members-modal", size="lg", backdrop=True, autofocus=False)
 
 
 # ============ 回调函数 ============
@@ -738,7 +738,7 @@ def register_instruments_callbacks(app):
     # 确认删除池
     @app.callback(
         [Output('instruments-toast-container', 'children'),
-         Output('delete-pool-modal', 'is_open')],
+         Output('delete-pool-modal', 'is_open', allow_duplicate=True)],
         [Input('btn-confirm-delete-pool', 'n_clicks')],
         [State('pool-table', 'selected_rows'),
          State('pool-table', 'data')],
@@ -774,29 +774,15 @@ def register_instruments_callbacks(app):
 
         return toast, False
 
-    # 打开池成员模态框（通过 JavaScript）
+    # 关闭池成员模态框（打开由 JavaScript 负责）
     @app.callback(
         Output('pool-members-modal', 'is_open'),
-        [Input('btn-open-pool-members-modal', 'n_clicks'),
-         Input('btn-close-pool-members', 'n_clicks')],
-        [State('pool-members-modal', 'is_open'),
-         State('pool-table', 'selected_rows'),
-         State('pool-table', 'data')]
+        [Input('btn-close-pool-members', 'n_clicks')],
+        [State('pool-members-modal', 'is_open')]
     )
-    def toggle_pool_members_modal(n_open, n_close, is_open, selected_rows, table_data):
-        ctx = callback_context
-        if not ctx.triggered:
-            return is_open
-
-        trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
-
-        if trigger_id == 'btn-open-pool-members-modal':
-            if selected_rows:
-                pool = table_data[selected_rows[0]]
-                return True
-        elif trigger_id == 'btn-close-pool-members':
+    def toggle_pool_members_modal(n_close, is_open):
+        if n_close:
             return False
-
         return is_open
 
     # 更新池成员数据

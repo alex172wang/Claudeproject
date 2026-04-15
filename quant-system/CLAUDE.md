@@ -186,6 +186,67 @@ pytest tests/smoke_test.py -v
 
 如测试失败，说明代码改动引入了启动级错误，必须修复后才能继续。
 
+### 单元测试规范（tests/unit/）
+
+每个指标文件完成后，**必须**同步生成对应测试文件：
+
+- 文件命名：`test_{indicator_file}.py`，如 `test_l1_trend.py`
+- 必须覆盖：
+  1. **数值正确性**：构造已知输入，断言输出值（精确到小数点后2位）
+  2. **归一化范围**：所有指标输出必须在 [0, 100] 内
+  3. **边界数据**：停牌（成交量=0）、涨跌停、数据缺失（NaN）
+  4. **复权一致性**：相同参数前复权/后复权跑出结果不能相差超过阈值
+
+```python
+# 测试模板
+def test_composite_slope_momentum_value():
+    """给定已知均线数据，验证动量分计算正确"""
+    df = pd.DataFrame({
+        'close': [10, 11, 12, 11, 13, 14, 13, 15, 16, 15],
+        'volume': [1000] * 10
+    })
+    indicator = CompositeSlopeMomentum(df)
+    result = indicator.calculate()
+    assert 0 <= result['score'] <= 100
+    assert result['score'] == pytest.approx(72.5, abs=1.0)  # 手工算好的预期值
+
+def test_boundary_zero_volume():
+    """停牌日（成交量=0）不应触发信号"""
+    ...
+```
+
+### E2E 测试规范（tests/e2e/）
+
+每个前端功能页面完成后，**必须**同步生成 Playwright 测试：
+
+- 必须覆盖：
+  1. **元素存在**：所有按钮、表单、图表容器必须可见
+  2. **交互流程**：点击→等待→断言结果区域有内容
+  3. **数值一致**：前端展示值必须和后端 API 返回值一致
+
+```python
+def test_dashboard_strategy_buttons_exist(page):
+    page.goto("http://localhost:8000/dashboard/")
+    # 断言关键元素存在，不能只测页面加载
+    expect(page.locator("[data-testid='run-strategy-btn']")).to_be_visible()
+    expect(page.locator("[data-testid='score-chart']")).to_be_visible()
+
+def test_run_strategy_shows_result(page):
+    page.goto("http://localhost:8000/dashboard/")
+    page.click("[data-testid='run-strategy-btn']")
+    page.wait_for_selector("[data-testid='result-score']", timeout=10000)
+    score_text = page.locator("[data-testid='result-score']").inner_text()
+    assert 0 <= float(score_text) <= 100
+```
+
+> **前端元素必须加 `data-testid` 属性**，Claude 写前端组件时默认加上，
+> 命名规范：`data-testid="{功能}-{元素类型}"`，如 `run-strategy-btn`、`score-chart`
+
+### 前端组件规范
+
+所有可交互元素（按钮、输入框）和关键展示元素（图表、结果区域）
+**必须**添加 `data-testid` 属性，供 E2E 测试使用。
+
 ---
 
-*本文档随项目迭代更新。最后更新：2026-03-29*
+*本文档随项目迭代更新。最后更新：2026-04-14*

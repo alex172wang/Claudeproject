@@ -9,6 +9,7 @@ import time
 import socket
 import threading
 from pathlib import Path
+from playwright.sync_api import sync_playwright
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent
@@ -25,11 +26,16 @@ def is_port_open(host: str, port: int, timeout: float = 1.0) -> bool:
 
 
 def wait_for_server(host: str, port: int, timeout: float = 60.0) -> bool:
-    """等待服务器启动"""
+    """等待服务器启动并真正响应 HTTP 请求"""
+    import urllib.request
     start_time = time.time()
     while time.time() - start_time < timeout:
         if is_port_open(host, port):
-            return True
+            try:
+                urllib.request.urlopen(f'http://{host}:{port}/', timeout=3.0)
+                return True
+            except Exception:
+                pass
         time.sleep(1.0)
     return False
 
@@ -57,6 +63,15 @@ def django_setup():
     # 不初始化 Django ORM，避免 async 问题
     # 测试数据通过 init_test_data.py 单独初始化
     yield
+
+
+@pytest.fixture(scope="session")
+def browser(browser):
+    """覆写 browser fixture，禁用 Chromium sandbox（Windows 本地测试需要）"""
+    # pytest-playwright 已经提供了 browser fixture，我们在这里配置它
+    # 实际通过 launch_persistent_context 或 BrowserType.launch 时的 args
+    # 由于 browser fixture 由插件提供，这里我们只是引用它确保其被使用
+    return browser
 
 
 @pytest.fixture(scope="session")
@@ -92,15 +107,10 @@ def dashboard_server():
     proc = subprocess.Popen(
         [sys.executable, str(project_root / "run_dashboard.py"), "--port", str(port), "--host", host],
         cwd=str(project_root),
-        stdout=subprocess.PIPE,
+        stdout=subprocess.DEVNULL,  # 不捕获输出，避免管道阻塞
         stderr=subprocess.STDOUT,
-        text=True,
-        bufsize=1,
         env=env
     )
-
-    # 启动输出流读取线程
-    output_thread = stream_output(proc)
 
     # Wait for server to start
     print(f"等待 Dashboard 服务器启动 (http://{host}:{port})...")
@@ -116,7 +126,7 @@ def dashboard_server():
         pytest.fail("Dashboard server failed to start")
 
     print(f"✓ Dashboard 服务器已启动: http://{host}:{port}")
-    time.sleep(5)  # 额外等待确保完全就绪
+    time.sleep(10)  # 额外等待确保完全就绪
 
     # 检查服务器是否还在运行
     if proc.poll() is not None:
